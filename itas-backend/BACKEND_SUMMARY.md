@@ -145,7 +145,7 @@ All API responses follow REST conventions:
 
 The backend is designed to work with the existing React frontend:
 - Base URL: `http://localhost:8000/api/`
-- CORS enabled for `localhost:5173` and `localhost:3000`
+- CORS enabled for `localhost:5173`, `localhost:3000` and production frontend domains (`https://jobtecacademy.com`, `https://www.jobtecacademy.com`)
 - JWT tokens stored in localStorage as `itas_token`
 - All endpoints match frontend expectations
 

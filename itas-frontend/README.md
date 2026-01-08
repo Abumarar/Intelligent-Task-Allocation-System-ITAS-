@@ -71,3 +71,7 @@ export default defineConfig([
   },
 ])
 ```
+
+## Deployment
+
+See `DEPLOYMENT.md` for instructions to deploy the frontend to Vercel. Important: set the `VITE_API_BASE_URL` environment variable in Vercel to point to your Render backend (for example, `https://api.jobtecacademy.com/api`). If your backend is on the same domain, the client will default to the same origin under `/api`.

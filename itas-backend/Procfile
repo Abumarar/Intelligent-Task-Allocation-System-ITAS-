@@ -1,0 +1,2 @@
+web: gunicorn itas.wsgi --log-file -
+# Note: Run `python manage.py collectstatic --noinput` during release/deploy on Render (or use a render.yaml release command).

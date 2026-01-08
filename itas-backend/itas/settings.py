@@ -20,9 +20,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# Default to False for safety; set DEBUG=True in .env for local development
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+# Allowed hosts - include Render and your custom domain
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com', 'www.jobtecacademy.com', 'jobtecacademy.com']
+
+# Honor the X-Forwarded-Proto header set by proxies (e.g., Render)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# SSL / HSTS settings - enabled when DEBUG is False
+if not DEBUG:
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+
+# Prevent running with the default insecure SECRET_KEY in production
+if not DEBUG and SECRET_KEY.startswith('django-insecure'):
+    raise ValueError("Insecure SECRET_KEY detected. Set a secure SECRET_KEY environment variable for production.")
 
 
 # Application definition

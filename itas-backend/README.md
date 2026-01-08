@@ -194,3 +194,7 @@ python manage.py test
 ## Admin Interface
 
 Access Django admin at `http://localhost:8000/admin/` with superuser credentials.
+
+## Deployment
+
+See `DEPLOYMENT.md` for Render deployment instructions and recommended environment variables (SECRET_KEY, DEBUG=False, DATABASE_URL, etc.).
