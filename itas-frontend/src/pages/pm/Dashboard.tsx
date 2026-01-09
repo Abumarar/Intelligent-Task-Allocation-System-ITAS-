@@ -18,43 +18,52 @@ const priorityClass = (priority: string) => {
 
 export default function PMDashboard() {
   const { user } = useAuth();
+
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: fetchDashboardStats,
   });
+
+  // ✅ FIX: wrap fetchTasksList so it matches React Query's expected queryFn signature
   const { data: tasksData, isLoading: tasksLoading } = useQuery({
     queryKey: ["tasks"],
-    queryFn: fetchTasksList,
+    queryFn: () => fetchTasksList(),
   });
 
-  const stats = statsData ? [
-    { label: "Active tasks", value: String(statsData.active_tasks), meta: "Currently assigned", tone: "accent-teal" },
-    { label: "Unassigned", value: String(statsData.unassigned_tasks), meta: "Need allocation", tone: "accent-clay" },
-    { label: "Employee capacity", value: `${Math.round(statsData.employee_capacity)}%`, meta: "Average workload", tone: "accent-sun" },
-    { label: "Skills coverage", value: `${Math.round(statsData.skills_coverage)}%`, meta: "Task coverage", tone: "accent-teal" },
-  ] : [
-    { label: "Active tasks", value: "0", meta: "Loading...", tone: "accent-teal" },
-    { label: "Unassigned", value: "0", meta: "Loading...", tone: "accent-clay" },
-    { label: "Employee capacity", value: "0%", meta: "Loading...", tone: "accent-sun" },
-    { label: "Skills coverage", value: "0%", meta: "Loading...", tone: "accent-teal" },
-  ];
+  const stats = statsData
+    ? [
+      { label: "Active tasks", value: String(statsData.active_tasks), meta: "Currently assigned", tone: "accent-teal" },
+      { label: "Unassigned", value: String(statsData.unassigned_tasks), meta: "Need allocation", tone: "accent-clay" },
+      { label: "Employee capacity", value: `${Math.round(statsData.employee_capacity)}%`, meta: "Average workload", tone: "accent-sun" },
+      { label: "Skills coverage", value: `${Math.round(statsData.skills_coverage)}%`, meta: "Task coverage", tone: "accent-teal" },
+    ]
+    : [
+      { label: "Active tasks", value: "0", meta: "Loading...", tone: "accent-teal" },
+      { label: "Unassigned", value: "0", meta: "Loading...", tone: "accent-clay" },
+      { label: "Employee capacity", value: "0%", meta: "Loading...", tone: "accent-sun" },
+      { label: "Skills coverage", value: "0%", meta: "Loading...", tone: "accent-teal" },
+    ];
 
-  const tasks = tasksData ? tasksData.slice(0, 3).map((task: Task) => ({
-    title: task.title,
-    priority: task.priority,
-    due: task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : "No due date",
-    skills: task.requiredSkills || [],
-  })) : [];
+  const tasks = tasksData
+    ? tasksData.slice(0, 3).map((task: Task) => ({
+      title: task.title,
+      priority: task.priority,
+      due: task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : "No due date",
+      skills: task.requiredSkills || [],
+    }))
+    : [];
 
-  const focusAreas = statsData ? [
-    { label: "Skill coverage", value: `${Math.round(statsData.skills_coverage)}%`, meta: "Task coverage", progress: Math.round(statsData.skills_coverage) },
-    { label: "Capacity balance", value: `${Math.round(statsData.employee_capacity)}%`, meta: "Average workload", progress: Math.round(statsData.employee_capacity) },
-    { label: "On-time risk", value: "21%", meta: "Low risk", progress: 21 },
-  ] : [
-    { label: "Skill coverage", value: "0%", meta: "Loading...", progress: 0 },
-    { label: "Capacity balance", value: "0%", meta: "Loading...", progress: 0 },
-    { label: "On-time risk", value: "0%", meta: "Loading...", progress: 0 },
-  ];
+  const focusAreas = statsData
+    ? [
+      { label: "Skill coverage", value: `${Math.round(statsData.skills_coverage)}%`, meta: "Task coverage", progress: Math.round(statsData.skills_coverage) },
+      { label: "Capacity balance", value: `${Math.round(statsData.employee_capacity)}%`, meta: "Average workload", progress: Math.round(statsData.employee_capacity) },
+      { label: "On-time risk", value: "21%", meta: "Low risk", progress: 21 },
+    ]
+    : [
+      { label: "Skill coverage", value: "0%", meta: "Loading...", progress: 0 },
+      { label: "Capacity balance", value: "0%", meta: "Loading...", progress: 0 },
+      { label: "On-time risk", value: "0%", meta: "Loading...", progress: 0 },
+    ];
 
   const matches: TaskMatch[] = []; // Will be populated when tasks have matches
 
