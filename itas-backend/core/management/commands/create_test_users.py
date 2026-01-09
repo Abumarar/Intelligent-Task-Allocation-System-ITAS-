@@ -46,3 +46,16 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'Created Employee user: {emp_email}'))
         else:
             self.stdout.write(self.style.WARNING(f'Employee user {emp_email} already exists'))
+
+        # Create Admin User (Superuser)
+        admin_email = 'admin@itas.com'
+        if not User.objects.filter(email=admin_email).exists():
+            User.objects.create_superuser(
+                username='admin',
+                email=admin_email,
+                password='admin123',
+                role='PM'  # Admin is also a PM logically
+            )
+            self.stdout.write(self.style.SUCCESS(f'Created Admin user: {admin_email}'))
+        else:
+            self.stdout.write(self.style.WARNING(f'Admin user {admin_email} already exists'))
