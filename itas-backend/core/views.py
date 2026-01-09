@@ -80,9 +80,6 @@ class AuthView(APIView):
         )
 
 
-class AuthView(APIView):
-    # ... (existing code) ...
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def seed_db(request):
