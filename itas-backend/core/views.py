@@ -34,24 +34,22 @@ class AuthView(APIView):
     def post(self, request):
         """Login endpoint."""
         email_or_username = (request.data.get("email") or "").strip()
-        password = request.data.get("password")
+        password = (request.data.get("password") or "").strip()
+
+        print(f"DEBUG LOGIN: Attempting login for '{email_or_username}'")
 
         if not email_or_username or not password:
             return Response(
-                {"message": "Email/username and password are required"},
+                {"message": "Please provide both email/username and password"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Normalize (helps if user types spaces/case differences)
-        email_or_username_norm = email_or_username.lower()
-
-        # Try to find the user by email OR username (case-insensitive)
+        # 1. Try to find user by email or username
         user = User.objects.filter(
-            Q(email__iexact=email_or_username_norm) | Q(username__iexact=email_or_username_norm)
+            Q(email__iexact=email_or_username) | 
+            Q(username__iexact=email_or_username)
         ).first()
 
-        if not user:
-            return Response(
                 {"message": "Invalid credentials"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
