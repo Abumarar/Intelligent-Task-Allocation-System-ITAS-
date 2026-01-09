@@ -80,6 +80,31 @@ class AuthView(APIView):
         )
 
 
+class AuthView(APIView):
+    # ... (existing code) ...
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def seed_db(request):
+    """Emergency endpoint to seed users if build script fails."""
+    from django.contrib.auth import get_user_model
+    from core.models import Employee
+    User = get_user_model()
+    
+    created_users = []
+    
+    # Create PM
+    if not User.objects.filter(email='pm@itas.com').exists():
+        User.objects.create_user(username='pm', email='pm@itas.com', password='pm123', role='PM')
+        created_users.append('PM')
+        
+    # Create Admin
+    if not User.objects.filter(email='admin@itas.com').exists():
+        User.objects.create_superuser(username='admin', email='admin@itas.com', password='admin123', role='PM')
+        created_users.append('Admin')
+    
+    return Response({'message': 'Seeding complete', 'created': created_users})
+
 class EmployeeViewSet(viewsets.ModelViewSet):
     """Employee endpoints."""
     queryset = Employee.objects.all()

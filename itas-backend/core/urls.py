@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from core.views import AuthView, EmployeeViewSet, TaskViewSet, DashboardView
+from core.views import AuthView, EmployeeViewSet, TaskViewSet, DashboardView, seed_db
 
 router = DefaultRouter()
 router.register(r'employees', EmployeeViewSet, basename='employee')
@@ -33,6 +33,7 @@ def api_root(request):
 urlpatterns = [
     path('', api_root, name='api-root'),
     path('auth/login', AuthView.as_view(), name='auth-login'),
+    path('seed', seed_db, name='seed-db'),
     path('dashboard/stats', DashboardView.as_view(), name='dashboard-stats'),
     path('', include(router.urls)),
 ]
