@@ -50,6 +50,8 @@ class AuthView(APIView):
             Q(username__iexact=email_or_username)
         ).first()
 
+        if not user:
+            return Response(
                 {"message": "Invalid credentials"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
