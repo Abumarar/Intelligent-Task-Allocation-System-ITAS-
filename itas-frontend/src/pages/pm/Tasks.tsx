@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { fetchTasks, updateTask, assignTask, type Task } from "../../api/tasks";
@@ -20,7 +20,7 @@ export default function Tasks() {
     // Fetch tasks
     const { data: tasks, isLoading: isLoadingTasks } = useQuery({
         queryKey: ["tasks"],
-        queryFn: fetchTasks,
+        queryFn: () => fetchTasks(),
     });
 
     // Fetch employees for assignment (limit 100 to get all)
@@ -192,8 +192,8 @@ export default function Tasks() {
                                                 <div className="relative">
                                                     <select
                                                         className={`appearance-none w-full text-xs rounded-lg pl-8 pr-6 py-1.5 border outline-none focus:border-primary/50 transition-all cursor-pointer text-right ${task.assigned_to
-                                                                ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                                                                : "bg-black/40 text-secondary/70 border-white/10 hover:bg-black/60"
+                                                            ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                                            : "bg-black/40 text-secondary/70 border-white/10 hover:bg-black/60"
                                                             }`}
                                                         value={task.assigned_to || ""}
                                                         onChange={(e) => handleAssign(task.id, e.target.value)}

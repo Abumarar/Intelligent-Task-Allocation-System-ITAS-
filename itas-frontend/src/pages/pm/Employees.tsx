@@ -30,7 +30,7 @@ export default function Employees() {
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["employees"],
-    queryFn: fetchEmployees,
+    queryFn: () => fetchEmployees(),
   });
 
   const [q, setQ] = useState("");
@@ -75,7 +75,7 @@ export default function Employees() {
     setEditingEmployee(employee);
     setFormData({
       name: employee.name,
-      email: employee.email,
+      email: employee.email || "",
       title: employee.title || ""
     });
     setIsModalOpen(true);
@@ -120,7 +120,7 @@ export default function Employees() {
       await deleteEmployee(id);
       await qc.invalidateQueries({ queryKey: ["employees"] });
       setMsg({ text: `Removed ${name}.`, tone: "success" });
-    } catch (e: unknown) {
+    } catch {
       setMsg({ text: "Failed to delete employee.", tone: "error" });
     } finally {
       setDeletingId(null);

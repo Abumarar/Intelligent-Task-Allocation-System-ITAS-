@@ -85,15 +85,15 @@ export type FetchTasksParams = {
 function normalizeList<T>(data: unknown): T[] {
     // Accept: array OR {results: array}
     if (Array.isArray(data)) return data as T[];
-    if (data && typeof data === "object" && Array.isArray((data as any).results)) {
-        return (data as any).results as T[];
+    if (data && typeof data === "object" && "results" in data && Array.isArray((data as { results: unknown[] }).results)) {
+        return (data as { results: T[] }).results;
     }
     // Safer fallback instead of crashing
     return [];
 }
 
 export function getApiErrorMessage(err: unknown, fallback = "Request failed") {
-    const e = err as AxiosError<any>;
+    const e = err as AxiosError<{ message?: string; detail?: string }>;
     return (
         e?.response?.data?.message ||
         e?.response?.data?.detail ||
