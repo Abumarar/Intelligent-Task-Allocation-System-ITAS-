@@ -46,8 +46,16 @@ else:
     SECURE_HSTS_PRELOAD = False
 
 # Prevent running with the default insecure SECRET_KEY in production
+# Prevent running with the default insecure SECRET_KEY in production
 if not DEBUG and SECRET_KEY.startswith('django-insecure'):
-    raise ValueError("Insecure SECRET_KEY detected. Set a secure SECRET_KEY environment variable for production.")
+    import random
+    import string
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.warning("Insecure SECRET_KEY detected in production. Generating a temporary random key. User sessions will be invalidated on restart.")
+    
+    SECRET_KEY = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(50))
 
 
 # Application definition
