@@ -48,7 +48,8 @@ export default function Employees() {
   // Add Employee Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [formData, setFormData] = useState({ name: "", email: "", title: "" });
+  const [formData, setFormData] = useState<{ name: string, email: string, title: string, skills: string[] }>({ name: "", email: "", title: "", skills: [] });
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -76,7 +77,8 @@ export default function Employees() {
 
   const openCreateModal = () => {
     setEditingEmployee(null);
-    setFormData({ name: "", email: "", title: "" });
+    setFormData({ name: "", email: "", title: "", skills: [] });
+    setUploadedFile(null);
     setIsModalOpen(true);
   };
 
@@ -85,8 +87,10 @@ export default function Employees() {
     setFormData({
       name: employee.name,
       email: employee.email || "",
-      title: employee.title || ""
+      title: employee.title || "",
+      skills: [] // We don't load existing skills for now, simplified
     });
+    setUploadedFile(null);
     setIsModalOpen(true);
   };
 
@@ -98,11 +102,13 @@ export default function Employees() {
     setMsg(null);
     try {
       const data = await analyzeEmployeeCV(file);
+      setUploadedFile(file); // Store file for later upload
       setFormData(prev => ({
         ...prev,
         name: data.name || prev.name,
         email: data.email || prev.email,
-        title: data.role || prev.title // API returns 'role' for title
+        title: data.role || prev.title,
+        skills: data.skills || []
       }));
       setMsg({ text: "Details auto-filled from CV.", tone: "success" });
     } catch (err) {
@@ -127,8 +133,15 @@ export default function Employees() {
         setMsg({ text: "Employee updated successfully.", tone: "success" });
       } else {
         const { createEmployee } = await import("../../api/employees");
-        await createEmployee(formData);
-        setMsg({ text: "Employee added successfully.", tone: "success" });
+        // Create employee with initial details
+        const newEmployee = await createEmployee(formData);
+
+        // If we have an uploaded CV file, upload it now
+        if (uploadedFile) {
+          setMsg({ text: "Employee created. Uploading CV...", tone: "success" });
+          await uploadEmployeeCV(newEmployee.id, uploadedFile);
+        }
+        setMsg({ text: "Employee added and CV uploaded.", tone: "success" });
       }
       await qc.invalidateQueries({ queryKey: ["employees"] });
       setIsModalOpen(false);
@@ -297,6 +310,16 @@ export default function Employees() {
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
                 />
+              </div>
+              <div className="field">
+                <label className="field-label">Skills (comma separated)</label>
+                <input
+                  className="input"
+                  value={formData.skills.join(", ")}
+                  onChange={e => setFormData({ ...formData, skills: e.target.value.split(",").map(s => s.trim()) })}
+                  placeholder="e.g. React, Python, Leadership"
+                />
+                <p className="text-xs text-slate-500 mt-1">Auto-detected from CV. Edit as needed.</p>
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>

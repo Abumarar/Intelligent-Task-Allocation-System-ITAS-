@@ -22,7 +22,7 @@ export async function fetchEmployees(params?: { page?: number; limit?: number })
     return Array.isArray(res.data) ? res.data : (res.data.results || []);
 }
 
-export async function createEmployee(data: { name: string; email: string; title: string }) {
+export async function createEmployee(data: { name: string; email: string; title: string, skills?: string[] }) {
     const res = await api.post("/employees/", data);
     return res.data;
 }
@@ -53,5 +53,5 @@ export async function analyzeEmployeeCV(file: File) {
     const res = await api.post("/employees/analyze/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data; // { name, email, role }
+    return res.data; // { name, email, role, skills }
 }

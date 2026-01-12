@@ -150,6 +150,17 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     email=email
                 )
 
+                # Add initial skills if provided
+                skills = data.get("skills", [])
+                if skills and isinstance(skills, list):
+                    for skill_name in skills:
+                        Skill.objects.create(
+                            employee=employee,
+                            name=skill_name,
+                            source="MANUAL", # Created via form (even if auto-filled)
+                            confidence_score=1.0
+                        )
+
                 serializer = self.get_serializer(employee)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -226,6 +237,16 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             details["email"] = email_match.group(0)
         else:
             details["email"] = ""
+            
+        # Extract Skills
+        try:
+            from .services.skill_extractor import SkillExtractor
+            extractor = SkillExtractor()
+            skills_data = extractor.extract_skills(extracted_text)
+            details["skills"] = [s["name"] for s in skills_data]
+        except Exception as e:
+            print(f"Error extracting skills in analyze_cv: {e}")
+            details["skills"] = []
             
         return Response(details)
 
