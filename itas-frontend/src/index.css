@@ -461,6 +461,37 @@ textarea {
   font-weight: 600;
 }
 
+/* Kanban Board Styles */
+.kanban-board {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 24px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.kanban-column {
+  flex-shrink: 0;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .kanban-board {
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+  
+  .kanban-column {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .focus-list {
   display: flex;
   flex-direction: column;

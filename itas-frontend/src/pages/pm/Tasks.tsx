@@ -108,11 +108,11 @@ export default function Tasks() {
             </div>
 
             {/* Kanban Board */}
-            <div className="flex gap-6 overflow-x-auto pb-6 -mx-4 px-4 snap-x snap-mandatory lg:overflow-visible lg:pb-0">
+            <div className="kanban-board">
                 {COLUMNS.map((col) => {
                     const columnTasks = getTasksByColumn(col.id);
                     return (
-                        <div key={col.id} className="snap-center flex-shrink-0 w-[320px] lg:w-1/4 flex flex-col gap-4">
+                        <div key={col.id} className="kanban-column">
                             {/* Column Header */}
                             <div className={`flex items-center justify-between p-3 rounded-xl border ${col.border} ${col.bg} backdrop-blur-sm`}>
                                 <div className="flex items-center gap-2">
