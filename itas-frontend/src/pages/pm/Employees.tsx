@@ -434,6 +434,15 @@ export default function Employees() {
                     {uploadingId === employee.id ? "Uploading..." : "Upload CV"}
                   </span>
                 </label>
+                {employee.cvUrl && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => window.open(employee.cvUrl, '_blank')}
+                    title="View CV"
+                  >
+                    📄
+                  </button>
+                )}
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => openEditModal(employee)}

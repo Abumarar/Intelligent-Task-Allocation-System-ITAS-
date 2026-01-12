@@ -10,6 +10,7 @@ export type Employee = {
 
     cvUpdatedAt?: string;
     cvErrorMessage?: string;
+    cvUrl?: string;
     current_workload?: number;
 };
 
