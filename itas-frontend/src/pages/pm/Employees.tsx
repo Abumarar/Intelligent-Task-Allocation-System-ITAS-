@@ -53,6 +53,7 @@ export default function Employees() {
   const [submitting, setSubmitting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedSkillsId, setExpandedSkillsId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const list = data || [];
@@ -368,15 +369,19 @@ export default function Employees() {
                   <div className="tag-list">
                     {skills.length ? (
                       <>
-                        {skills.slice(0, 8).map((skill) => (
+                        {(expandedSkillsId === employee.id ? skills : skills.slice(0, 8)).map((skill) => (
                           <span key={skill} className="tag">
                             {skill}
                           </span>
                         ))}
                         {skills.length > 8 && (
-                          <span className="muted">
-                            +{skills.length - 8} more
-                          </span>
+                          <button
+                            type="button"
+                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline ml-1"
+                            onClick={() => setExpandedSkillsId(expandedSkillsId === employee.id ? null : employee.id)}
+                          >
+                            {expandedSkillsId === employee.id ? "Show less" : `+${skills.length - 8} more`}
+                          </button>
                         )}
                       </>
                     ) : (
