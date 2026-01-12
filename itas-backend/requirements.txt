@@ -17,3 +17,4 @@ joblib==1.4.2
 kagglehub==0.3.6
 python-docx==1.1.2
 # Force rebuild
+# Trigger deploy for skills update
