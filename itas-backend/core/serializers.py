@@ -33,10 +33,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
     skills = serializers.SerializerMethodField()
     cvStatus = serializers.SerializerMethodField()
     cvUpdatedAt = serializers.SerializerMethodField()
+    cvErrorMessage = serializers.SerializerMethodField()
     
     class Meta:
         model = Employee
-        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'current_workload']
+        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'cvErrorMessage', 'current_workload']
         read_only_fields = ['id']
     
     def get_skills(self, obj):
@@ -50,6 +51,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
     def get_cvUpdatedAt(self, obj):
         if hasattr(obj, 'cv') and obj.cv.uploaded_at:
             return obj.cv.uploaded_at.isoformat()
+        return None
+
+    def get_cvErrorMessage(self, obj):
+        if hasattr(obj, 'cv') and obj.cv.status == 'FAILED':
+            return obj.cv.error_message
         return None
 
     def update(self, instance, validated_data):

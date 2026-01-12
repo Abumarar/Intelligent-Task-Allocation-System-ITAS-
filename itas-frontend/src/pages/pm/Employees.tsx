@@ -358,9 +358,16 @@ export default function Employees() {
                     {employee.title || employee.email || "Role not set"}
                   </div>
                 </div>
-                <span className={`badge ${statusClass(status)}`}>
-                  {statusLabel(status)}
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className={`badge ${statusClass(status)}`} title={employee.cvErrorMessage}>
+                    {statusLabel(status)}
+                  </span>
+                  {status === 'FAILED' && employee.cvErrorMessage && (
+                    <span className="text-[10px] text-red-500 mt-1 max-w-[100px] text-right leading-tight">
+                      {employee.cvErrorMessage}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="employee-body">

@@ -9,6 +9,7 @@ export type Employee = {
     cvStatus?: "NOT_UPLOADED" | "PROCESSING" | "READY" | "FAILED";
 
     cvUpdatedAt?: string;
+    cvErrorMessage?: string;
     current_workload?: number;
 };
 
