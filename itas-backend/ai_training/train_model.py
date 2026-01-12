@@ -8,7 +8,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 
-CSV_PATH = "dataset/Resume/Resume.csv"
+import kagglehub
+import glob
 
 def clean_text(text):
     """
@@ -26,18 +27,41 @@ def clean_text(text):
     return text
 
 def load_data():
-    if not os.path.exists(CSV_PATH):
-        raise FileNotFoundError(f"Dataset not found at {CSV_PATH}")
+    print("Downloading dataset from Kaggle...")
+    # Download latest version using kagglehub
+    path = kagglehub.dataset_download("gauravduttakiit/resume-dataset")
+    print("Path to dataset files:", path)
+    
+    # Find the CSV file in the downloaded directory
+    csv_files = glob.glob(os.path.join(path, "*.csv"))
+    if not csv_files:
+        # Recursive search if not in root
+        csv_files = glob.glob(os.path.join(path, "**", "*.csv"), recursive=True)
         
-    print(f"Loading dataset from {CSV_PATH}...")
-    df = pd.read_csv(CSV_PATH)
+    if not csv_files:
+         raise FileNotFoundError(f"No CSV file found in {path}")
+         
+    csv_path = csv_files[0]
+    print(f"Loading dataset from {csv_path}...")
+    
+    df = pd.read_csv(csv_path)
     
     # Rename for consistency if needed, but we'll specific columns
     print(f"Columns: {df.columns}")
     
     # Clean text
     print("Cleaning text...")
-    df['cleaned_text'] = df['Resume_str'].apply(clean_text)
+    if 'Resume_str' in df.columns:
+        df['cleaned_text'] = df['Resume_str'].apply(clean_text)
+    elif 'Resume' in df.columns:
+         df['cleaned_text'] = df['Resume'].apply(clean_text)
+    else:
+        # Fallback to finding text column
+        text_col = [c for c in df.columns if 'resume' in c.lower() or 'text' in c.lower()]
+        if text_col:
+            df['cleaned_text'] = df[text_col[0]].apply(clean_text)
+        else:
+             raise ValueError("Could not identify Resume text column")
     
     return df
 
