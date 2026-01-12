@@ -235,6 +235,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                             source="CV",
                             confidence_score=skill_data["confidence_score"]
                         )
+                    
+                    # Extract and update details
+                    details = parser.extract_details(extracted_text)
+                    
+                    # Update Title if found
+                    if details["role"] and (not employee.title or employee.title.startswith("New Employee")):
+                        employee.title = details["role"]
+                        employee.save()
+                    
+                    # Update Name if found
+                    if details["name"]:
+                        user = employee.user
+                        current_name = f"{user.first_name} {user.last_name}".strip()
+                        # Only update if name looks generic or is just email
+                        if not current_name or "@" in current_name or current_name.lower().startswith("new user"):
+                            name_parts = details["name"].split()
+                            user.first_name = name_parts[0]
+                            user.last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                            user.save()
 
             except Exception as e:
                 cv.status = "FAILED"
