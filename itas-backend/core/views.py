@@ -422,6 +422,26 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by("-created_at")
 
+    def create(self, request, *args, **kwargs):
+        """Create task and return matches."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # Get the created task instance
+        task = serializer.instance
+        
+        # Calculate matches
+        engine = MatchingEngine()
+        matches = engine.find_best_matches(task, limit=5, min_score=40.0)
+        
+        # Serialize response
+        response_data = serializer.data
+        response_data["matches"] = matches
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_create(self, serializer):
         """Create task with current user as creator."""
         serializer.save(created_by=self.request.user)

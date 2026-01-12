@@ -1,8 +1,17 @@
 import { useState, type FormEvent } from "react";
 import TagInput from "../../components/common/TagInput";
 import { api } from "../../api/client";
-import { uploadTaskDocument } from "../../api/tasks";
+import { uploadTaskDocument, assignTask } from "../../api/tasks";
 import { useQueryClient } from "@tanstack/react-query";
+
+type Match = {
+  employee_id: string;
+  employee_name: string;
+  employee_title: string;
+  suitability_score: number;
+  matching_skills: string[];
+  current_workload: number;
+};
 
 export default function TaskCreate() {
   const queryClient = useQueryClient();
@@ -14,11 +23,19 @@ export default function TaskCreate() {
   const [analyzing, setAnalyzing] = useState(false);
   const [msg, setMsg] = useState<{ text: string; tone: "success" | "error" } | null>(null);
 
+  // New state for matches
+  const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const clearForm = () => {
     setTitle("");
     setDesc("");
     setPriority("MEDIUM");
     setSkills([]);
+    setCreatedTaskId(null);
+    setMatches([]);
+    setShowSuccess(false);
   };
 
   const reset = () => {
@@ -59,17 +76,31 @@ export default function TaskCreate() {
     setSaving(true);
     setMsg(null);
     try {
-      await api.post("/tasks/", {
+      const res = await api.post("/tasks/", {
         title,
         description: desc,
         priority,
         requiredSkills: skills,
       });
-      // Invalidate queries to refresh dashboard immediately
+
+      // Capture matches if returned
+      const newMatches = res.data.matches || [];
+      const newTaskId = res.data.id;
+
+      // Invalidate queries to refresh dashboard
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-      clearForm();
-      setMsg({ text: "Task created successfully.", tone: "success" });
+
+      if (newMatches.length > 0) {
+        setMatches(newMatches);
+        setCreatedTaskId(newTaskId);
+        setShowSuccess(true);
+        setMsg({ text: "Task created! Review recommendations below.", tone: "success" });
+      } else {
+        clearForm();
+        setMsg({ text: "Task created successfully.", tone: "success" });
+      }
+
     } catch (err: unknown) {
       let errorMsg = "Failed to create task.";
       if (err && typeof err === 'object' && 'response' in err) {
@@ -80,6 +111,97 @@ export default function TaskCreate() {
       setSaving(false);
     }
   };
+
+  const handleAssign = async (employeeId: string) => {
+    if (!createdTaskId) return;
+    try {
+      await assignTask(createdTaskId, employeeId);
+      setMsg({ text: "Employee assigned successfully!", tone: "success" });
+      // Remove assigned match or show status
+      setMatches(prev => prev.filter(m => m.employee_id !== employeeId));
+      // Provide feedback
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
+      // If no matches left or user wants to proceed
+      setTimeout(() => {
+        clearForm(); // Reset after assignment
+      }, 1500);
+
+    } catch (err) {
+      setMsg({ text: "Failed to assign task.", tone: "error" });
+    }
+  };
+
+  if (showSuccess) {
+    return (
+      <div className="page">
+        <div className="max-w-3xl mx-auto w-full">
+          <div className="mb-8 text-center">
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Task Created Successfully</h1>
+            <p className="text-slate-500">We found the best matches for this task based on skills and workload.</p>
+          </div>
+
+          <div className="card">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="font-semibold text-lg">Recommended Employees</h2>
+              <button onClick={clearForm} className="text-sm text-slate-500 hover:text-indigo-600 font-medium">
+                Skip & Create Another
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {matches.map(match => (
+                <div key={match.employee_id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center">
+                      {match.employee_name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-slate-900">{match.employee_name}</h3>
+                        <span className="text-xs text-slate-400">{match.employee_title}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                          {Math.round(match.suitability_score)}% Match
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {100 - Math.round(match.current_workload)}% Available
+                        </div>
+                      </div>
+                      {match.matching_skills.length > 0 && (
+                        <div className="flex gap-1 mt-2">
+                          {match.matching_skills.slice(0, 3).map(skill => (
+                            <span key={skill} className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                              {skill}
+                            </span>
+                          ))}
+                          {match.matching_skills.length > 3 && (
+                            <span className="text-[10px] text-slate-400 self-center">+{match.matching_skills.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAssign(match.employee_id)}
+                    className="btn btn-sm btn-outline hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-colors"
+                  >
+                    Assign
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
