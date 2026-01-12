@@ -311,11 +311,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
                     for skill_data in skills_data:
                         skill_name = extractor.normalize_skill_name(skill_data["name"])
-                        Skill.objects.create(
+                        Skill.objects.update_or_create(
                             employee=employee,
                             name=skill_name,
-                            source="CV",
-                            confidence_score=skill_data["confidence_score"]
+                            defaults={
+                                "source": "CV",
+                                "confidence_score": skill_data["confidence_score"]
+                            }
                         )
                     
                     # Extract and update details
