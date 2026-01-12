@@ -10,6 +10,7 @@ gunicorn==21.2.0
 PyPDF2==3.0.1
 nltk==3.9.1
 spacy==3.8.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 pandas==2.2.3
 scikit-learn==1.6.0
 joblib==1.4.2

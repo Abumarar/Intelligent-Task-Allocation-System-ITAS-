@@ -118,11 +118,15 @@ class CVParser:
                         details["role"] = match.group(1).title()
                     break
                     
+                    break
+                    
         except ImportError:
-            print("spaCy not installed or model not found. Skipping detailed extraction.")
+            print("CV_PARSER_ERROR: spaCy not installed or model not found. Skipping detailed extraction.")
         except Exception as e:
-            print(f"Error extracting details: {e}")
+            print(f"CV_PARSER_ERROR: Error extracting details: {e}")
             
+        print(f"CV_PARSER_DEBUG: Extracted text length: {len(text)}")
+        print(f"CV_PARSER_DEBUG: Extracted details: {details}")
         return details
 
     @staticmethod
@@ -204,7 +208,7 @@ class CVParser:
         model_path = os.path.join(settings.BASE_DIR, "resume_classifier_model.pkl")
         
         if not os.path.exists(model_path):
-            print(f"Model not found at {model_path}")
+            print(f"CV_PARSER_ERROR: Model not found at {model_path}")
             return None
             
         try:
@@ -222,13 +226,17 @@ class CVParser:
                 return t
                 
             cleaned = clean_text(text)
+            print(f"CV_PARSER_DEBUG: Model loaded. Predicting for text length {len(cleaned)}")
             
             # Predict
             prediction = model.predict([cleaned])[0]
+            print(f"CV_PARSER_DEBUG: Raw prediction: {prediction}")
             
             # Format: 'INFORMATION-TECHNOLOGY' -> 'Information Technology'
-            return prediction.replace("-", " ").title()
+            role = prediction.replace("-", " ").title()
+            print(f"CV_PARSER_DEBUG: Formatted Role: {role}")
+            return role
             
         except Exception as e:
-            print(f"Error predicting role: {e}")
+            print(f"CV_PARSER_ERROR: Error predicting role: {e}")
             return None
