@@ -67,6 +67,14 @@ export default function PMDashboard() {
 
   const matches: TaskMatch[] = []; // Will be populated when tasks have matches
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    // 6 AM to 12 PM -> Good morning
+    // Else (12 PM to 6 AM) -> Good evening
+    if (hour >= 6 && hour < 12) return "Good morning";
+    return "Good evening";
+  };
+
   if (statsLoading || tasksLoading) {
     return (
       <div className="page">
@@ -81,7 +89,7 @@ export default function PMDashboard() {
         <div>
           <div className="eyebrow">PM Dashboard</div>
           <h1 className="page-title">
-            Good morning{user?.name ? `, ${user.name}` : ""}.
+            {getGreeting()}{user?.name ? `, ${user.name}` : ""}.
           </h1>
           <p className="lead">
             Track allocation, capacity, and skill coverage across your team.
