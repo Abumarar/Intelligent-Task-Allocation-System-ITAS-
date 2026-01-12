@@ -147,3 +147,12 @@ export async function getTaskMatches(taskId: string): Promise<TaskMatch[]> {
     const res = await api.get(withSlash(`/tasks/${taskId}/matches`));
     return normalizeList<TaskMatch>(res.data);
 }
+
+export async function uploadTaskDocument(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await api.post(withSlash("/tasks/analyze"), form, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+}

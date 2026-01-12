@@ -338,6 +338,64 @@ class TaskViewSet(viewsets.ModelViewSet):
         """Create task with current user as creator."""
         serializer.save(created_by=self.request.user)
 
+    @action(detail=False, methods=["post"], url_path="analyze")
+    def analyze_document(self, request):
+        """Analyze uploaded document to extract task details."""
+        if "file" not in request.FILES:
+            return Response(
+                {"message": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        file = request.FILES["file"]
+        
+        # Parse PDF
+        parser = CVParser() # Valid for generic docs too
+        if parser.is_valid_pdf(file):
+             # Read file
+            if hasattr(file, 'read'):
+                file_content = file.read()
+                file.seek(0)
+            else:
+                file_content = file
+            
+            import io
+            import PyPDF2
+            try:
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+                text_parts = []
+                for page in pdf_reader.pages:
+                    text_parts.append(page.extract_text())
+                extracted_text = "\n\n".join(text_parts).strip()
+            except Exception as e:
+                 return Response(
+                    {"message": f"Error parsing PDF: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+             return Response(
+                {"message": "Only PDF files are supported"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if not extracted_text:
+             return Response(
+                {"message": "Could not extract text from document"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Extract details
+        details = parser.extract_task_details(extracted_text)
+        
+        # Extract Skills using SkillExtractor
+        extractor = SkillExtractor()
+        skills_data = extractor.extract_skills(extracted_text)
+        details["requiredSkills"] = [
+            extractor.normalize_skill_name(s["name"]) for s in skills_data
+        ]
+        
+        return Response(details)
+
     @action(detail=True, methods=["get"], url_path="matches")
     def get_matches(self, request, pk=None):
         """Get recommended employee matches for a task."""

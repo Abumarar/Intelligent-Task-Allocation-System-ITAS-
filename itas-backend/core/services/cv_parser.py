@@ -124,3 +124,67 @@ class CVParser:
             print(f"Error extracting details: {e}")
             
         return details
+
+    @staticmethod
+    def extract_task_details(text: str) -> dict:
+        """
+        Extract task details (Title, Description, Skills, Priority) from document text.
+        """
+        import re
+        
+        details = {
+            "title": None,
+            "description": None,
+            "requiredSkills": [],
+            "priority": "MEDIUM"  # Default
+        }
+        
+        if not text:
+            return details
+            
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        
+        # 1. Extract Title
+        # Strategy: First non-empty line, or look for "Title:"
+        for line in lines[:5]:
+            if line.lower().startswith("title:"):
+                details["title"] = line.split(":", 1)[1].strip()
+                break
+            if line.lower().startswith("role:") or line.lower().startswith("position:"):
+                 details["title"] = line.split(":", 1)[1].strip()
+                 break
+        
+        if not details["title"] and lines:
+            # Fallback to first line if it looks like a title (short-ish)
+            if len(lines[0]) < 100:
+                details["title"] = lines[0]
+        
+        # 2. Extract Description
+        # Strategy: Everything else, or look for "Description:"
+        # For simple parsing, we'll just use the whole text as description if not explicitly found
+        description_start = 0
+        for i, line in enumerate(lines):
+            if "description" in line.lower() and len(line) < 30:
+                description_start = i + 1
+                break
+        
+        if description_start > 0:
+            details["description"] = "\n".join(lines[description_start:])
+        else:
+            # If no explicit description section, use the whole text (truncated if too long)
+            details["description"] = text[:2000] # Limit length
+            
+        # 3. Extract Priority
+        # Strategy: Keywords
+        urgent_keywords = ["urgent", "immediate", "critical", "high priority"]
+        if any(w in text.lower() for w in urgent_keywords):
+            details["priority"] = "HIGH"
+            
+        # 4. Extract Skills
+        # Reuse logic from SkillExtractor via the view, or duplicate basic extraction here?
+        # Ideally, we should use SkillExtractor in the view. 
+        # But we can do some basic extraction here if needed, 
+        # or just let the View handle the Skill extraction using the existing service.
+        # Let's let the View handle robust skill extraction.
+        
+        return details
