@@ -47,6 +47,40 @@ class CVParser:
             return None
 
     @staticmethod
+    def extract_text_from_docx(file) -> Optional[str]:
+        """
+        Extract text content from a DOCX file.
+        
+        Args:
+            file: Django UploadedFile or file-like object
+            
+        Returns:
+            Extracted text as string, or None if parsing fails
+        """
+        import docx
+        
+        try:
+            # Read the file content
+            if hasattr(file, 'read'):
+                file_content = file.read()
+                # If we read it, we need to pass a file-like object to docx
+                doc_file = io.BytesIO(file_content)
+            else:
+                # Assuming bytes
+                doc_file = io.BytesIO(file)
+            
+            doc = docx.Document(doc_file)
+            full_text = []
+            for para in doc.paragraphs:
+                full_text.append(para.text)
+                
+            return '\n'.join(full_text).strip()
+            
+        except Exception as e:
+            print(f"Error parsing DOCX: {str(e)}")
+            return None
+
+    @staticmethod
     def is_valid_pdf(file) -> bool:
         """Check if the uploaded file is a valid PDF."""
         try:
@@ -58,6 +92,23 @@ class CVParser:
             
             pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
             return len(pdf_reader.pages) > 0
+        except Exception:
+            return False
+
+    @staticmethod
+    def is_valid_docx(file) -> bool:
+        """Check if the uploaded file is a valid DOCX."""
+        import docx
+        try:
+            if hasattr(file, 'read'):
+                file_content = file.read()
+                file.seek(0)  # Reset file pointer
+                doc_file = io.BytesIO(file_content)
+            else:
+                doc_file = io.BytesIO(file)
+            
+            docx.Document(doc_file)
+            return True
         except Exception:
             return False
 

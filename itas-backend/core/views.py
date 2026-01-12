@@ -260,9 +260,12 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         
         # Parse PDF
         parser = CVParser()
-        if not parser.is_valid_pdf(file):
+        is_pdf = parser.is_valid_pdf(file)
+        is_docx = parser.is_valid_docx(file)
+        
+        if not (is_pdf or is_docx):
              return Response(
-                {"message": "Only PDF files are supported"},
+                {"message": "Only PDF and DOCX files are supported"},
                 status=status.HTTP_400_BAD_REQUEST
             )
             
@@ -274,15 +277,18 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             file_content = file
             
         try:
-            import io
-            import PyPDF2
-            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
             extracted_text = ""
-            for page in pdf_reader.pages:
-                extracted_text += page.extract_text() + "\n"
+            if is_pdf:
+                extracted_text = parser.extract_text_from_pdf(file)
+            elif is_docx:
+                extracted_text = parser.extract_text_from_docx(file)
+                
+            if not extracted_text:
+                raise ValueError("Could not extract text")
+                
         except Exception as e:
                 return Response(
-                {"message": f"Error parsing PDF: {str(e)}"},
+                {"message": f"Error parsing file: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
             
@@ -329,17 +335,20 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         file = request.FILES["file"]
 
         # Validate file type
-        if not file.name.lower().endswith(".pdf"):
+        if not (file.name.lower().endswith(".pdf") or file.name.lower().endswith(".docx")):
             return Response(
-                {"message": "Only PDF files are supported"},
+                {"message": "Only PDF and DOCX files are supported"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate PDF
+        # Validate File Content
         parser = CVParser()
-        if not parser.is_valid_pdf(file):
+        is_pdf = parser.is_valid_pdf(file)
+        is_docx = parser.is_valid_docx(file)
+        
+        if not (is_pdf or is_docx):
             return Response(
-                {"message": "Invalid PDF file"},
+                {"message": "Invalid file content"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -354,8 +363,32 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         def process_cv():
             try:
                 cv.refresh_from_db()
-                with cv.file.open("rb") as pdf_file:
-                    extracted_text = parser.extract_text_from_pdf(pdf_file)
+                cv.refresh_from_db()
+                with cv.file.open("rb") as f:
+                    file_content = f.read()
+                    f.seek(0)
+                    
+                    # Determine type again or store it - simpler to re-check or check extension
+                    # Since we validated on upload, we can check byte signature or just try both
+                    # Or check extension from file name if available
+                    
+                    extracted_text = None
+                    if cv.file.name.lower().endswith('.pdf') and parser.is_valid_pdf(f):
+                        f.seek(0)
+                        extracted_text = parser.extract_text_from_pdf(f)
+                    elif cv.file.name.lower().endswith('.docx'):
+                        # is_valid_docx checks but we can just try extract
+                        f.seek(0)
+                        extracted_text = parser.extract_text_from_docx(f)
+                    else:
+                        # Fallback try both
+                        f.seek(0)
+                        if parser.is_valid_pdf(f):
+                            f.seek(0)
+                            extracted_text = parser.extract_text_from_pdf(f)
+                        else:
+                            f.seek(0)
+                            extracted_text = parser.extract_text_from_docx(f)
 
                 if not extracted_text:
                     cv.status = "FAILED"
@@ -528,31 +561,21 @@ class TaskViewSet(viewsets.ModelViewSet):
         file = request.FILES["file"]
         
         # Parse PDF
+        # Parse Document
         parser = CVParser() # Valid for generic docs too
-        if parser.is_valid_pdf(file):
-             # Read file
-            if hasattr(file, 'read'):
-                file_content = file.read()
-                file.seek(0)
-            else:
-                file_content = file
-            
-            import io
-            import PyPDF2
-            try:
-                pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
-                text_parts = []
-                for page in pdf_reader.pages:
-                    text_parts.append(page.extract_text())
-                extracted_text = "\n\n".join(text_parts).strip()
-            except Exception as e:
-                 return Response(
-                    {"message": f"Error parsing PDF: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        
+        is_pdf = parser.is_valid_pdf(file)
+        is_docx = parser.is_valid_docx(file)
+        
+        extracted_text = None
+        
+        if is_pdf:
+             extracted_text = parser.extract_text_from_pdf(file)
+        elif is_docx:
+             extracted_text = parser.extract_text_from_docx(file)
         else:
              return Response(
-                {"message": "Only PDF files are supported"},
+                {"message": "Only PDF and DOCX files are supported"},
                 status=status.HTTP_400_BAD_REQUEST
             )
             
