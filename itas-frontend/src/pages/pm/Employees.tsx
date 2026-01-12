@@ -278,7 +278,7 @@ export default function Employees() {
                   <p className="text-xs text-indigo-700">Upload a resume to populate details.</p>
                 </div>
                 <label className={`btn btn-sm bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 ${analyzing ? "opacity-50" : "cursor-pointer"}`}>
-                  <input type="file" className="hidden" accept=".pdf" onChange={handleAnalzyeCV} disabled={analyzing} />
+                  <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleAnalzyeCV} disabled={analyzing} />
                   {analyzing ? "Analyzing..." : "Upload CV"}
                 </label>
               </div>
@@ -422,7 +422,7 @@ export default function Employees() {
                 >
                   <input
                     type="file"
-                    accept="application/pdf"
+                    accept=".pdf,.docx"
                     disabled={uploadingId === employee.id}
                     onChange={(ev) => {
                       const file = ev.target.files?.[0];

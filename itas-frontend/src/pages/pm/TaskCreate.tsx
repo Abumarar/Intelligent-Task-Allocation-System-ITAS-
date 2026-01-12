@@ -229,7 +229,7 @@ export default function TaskCreate() {
           <label className={`btn btn-sm bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 shadow-sm ${analyzing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <input
               type="file"
-              accept=".pdf"
+              accept=".pdf,.docx"
               className="hidden"
               onChange={handleDocumentUpload}
               disabled={analyzing}
