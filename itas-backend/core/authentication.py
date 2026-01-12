@@ -61,7 +61,7 @@ def generate_jwt_token(user):
     payload = {
         'user_id': user.id,
         'email': user.email,
-        'exp': datetime.utcnow() + timedelta(days=7),
+        'exp': datetime.utcnow() + timedelta(minutes=30),
         'iat': datetime.utcnow(),
     }
     

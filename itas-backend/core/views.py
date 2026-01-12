@@ -29,7 +29,21 @@ User = get_user_model()
 class AuthView(APIView):
     """Authentication endpoints."""
     permission_classes = [AllowAny]
-    authentication_classes = []  # No authentication required for login
+    # authentication_classes default to settings (JWT) which is fine for login as it handles Anonymous
+
+    def get(self, request):
+        """Verify token and return current user."""
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Invalid or expired token"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        user_serializer = UserSerializer(request.user)
+        user_data = user_serializer.data
+        user_data["id"] = str(user_data["id"])
+        
+        return Response({"user": user_data})
 
     def post(self, request):
         """Login endpoint."""
