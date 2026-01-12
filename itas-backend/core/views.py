@@ -654,3 +654,47 @@ class DashboardView(APIView):
 
         serializer = DashboardStatsSerializer(data)
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def debug_media(request):
+    """Debug view to check media file existence."""
+    from django.conf import settings
+    import os
+    
+    media_root = settings.MEDIA_ROOT
+    media_url = settings.MEDIA_URL
+    path = request.GET.get('path', '')
+    
+    exists = False
+    full_path = ""
+    folder_contents = []
+    
+    if path:
+        full_path = os.path.join(media_root, path)
+        exists = os.path.exists(full_path)
+    
+    # List media root contents
+    try:
+        if os.path.exists(media_root):
+            folder_contents = os.listdir(media_root)
+            # Check subfolders like 'cvs'
+            cvs_path = os.path.join(media_root, 'cvs')
+            if os.path.exists(cvs_path):
+                folder_contents.extend([f"cvs/{f}" for f in os.listdir(cvs_path)])
+        else:
+            folder_contents = ["Media Root does not exist"]
+    except Exception as e:
+        folder_contents = [str(e)]
+
+    return Response({
+        "MEDIA_ROOT": media_root,
+        "MEDIA_URL": media_url,
+        "Requested Path": path,
+        "Full Path": full_path,
+        "Exists": exists,
+        "Folder Contents": folder_contents,
+        "DEBUG": settings.DEBUG,
+        "Service": "ITAS Backend API"
+    })
