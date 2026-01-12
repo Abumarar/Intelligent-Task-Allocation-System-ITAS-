@@ -91,6 +91,53 @@ class AuthView(APIView):
             status=status.HTTP_200_OK
         )
 
+    def patch(self, request):
+        """Update current user profile (Name, Email, Password)."""
+        if not request.user.is_authenticated:
+            return Response(
+                {"message": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        user = request.user
+        data = request.data
+        
+        # Update Name
+        if "name" in data:
+            name_parts = data["name"].strip().split()
+            user.first_name = name_parts[0] if name_parts else ""
+            user.last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+        # Update Email
+        if "email" in data:
+            new_email = data["email"].strip().lower()
+            if new_email and new_email != user.email:
+                if User.objects.filter(email=new_email).exclude(id=user.id).exists():
+                    return Response(
+                        {"message": "Email already in use"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                user.email = new_email
+
+        # Update Password
+        if "password" in data:
+            new_password = data["password"].strip()
+            if len(new_password) < 6:
+                 return Response(
+                    {"message": "Password must be at least 6 characters"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            user.set_password(new_password)
+
+        user.save()
+        
+        # Serialize updated user
+        user_serializer = UserSerializer(user)
+        user_data = user_serializer.data
+        user_data["id"] = str(user_data["id"])
+
+        return Response({"user": user_data, "message": "Profile updated successfully"})
+
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     """Employee endpoints."""

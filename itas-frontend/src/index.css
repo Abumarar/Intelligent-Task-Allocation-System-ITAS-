@@ -24,6 +24,95 @@
   --nav-width: 270px;
 }
 
+.dark {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --panel: rgba(30, 41, 59, 0.95);
+  --ink: #e2e8f0;
+  --muted: #94a3b8;
+  --line: #334155;
+  --accent: #38bdf8;
+  --accent-2: #4ade80;
+  --accent-3: #60a5fa;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dark body {
+  background: radial-gradient(700px 420px at -10% -10%, rgba(56, 189, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%),
+    radial-gradient(700px 420px at 110% 10%, rgba(74, 222, 128, 0.15) 0%, rgba(0, 0, 0, 0) 70%),
+    linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+.dark .nav-meta {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+}
+
+.dark .sidebar {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: var(--line);
+}
+
+.dark .topbar {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: var(--line);
+}
+
+.dark .search-input {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.dark .card,
+.dark .user-card,
+.dark .stat-card,
+.dark .modal,
+.dark .employee-card {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.dark .input,
+.dark .select,
+.dark .textarea {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.dark .upload-box {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: var(--line);
+}
+
+.dark .tag {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+
+.dark .status-pill {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.dark .nav-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .nav-link.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+
+.dark .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 *,
 *::before,
 *::after {

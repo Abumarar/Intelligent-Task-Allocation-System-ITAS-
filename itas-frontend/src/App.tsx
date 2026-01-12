@@ -10,6 +10,8 @@ import TaskCreate from "./pages/pm/TaskCreate.tsx";
 import Employees from "./pages/pm/Employees.tsx";
 import Tasks from "./pages/pm/Tasks.tsx";
 import MyProfile from "./pages/employee/MyProfile.tsx";
+import Settings from "./pages/Settings.tsx";
+import { ThemeProvider } from "./context/ThemeContext.tsx";
 import AppShell, { type NavItem } from "./components/layout/AppShell";
 
 const queryClient = new QueryClient();
@@ -17,9 +19,11 @@ const pmNav: NavItem[] = [
   { label: "Dashboard", to: "/pm/dashboard", meta: "Pulse" },
   { label: "Tasks", to: "/pm/tasks", meta: "Manage" },
   { label: "Employees", to: "/pm/employees", meta: "Skills" },
+  { label: "Settings", to: "/pm/settings", meta: "Config" },
 ];
 const employeeNav: NavItem[] = [
   { label: "My Profile", to: "/employee/profile", meta: "Overview" },
+  { label: "Settings", to: "/employee/settings", meta: "Config" },
 ];
 
 function HomeRedirect() {
@@ -35,37 +39,41 @@ function HomeRedirect() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<HomeRedirect />} />
-            <Route path="/login" element={<Login />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<HomeRedirect />} />
+              <Route path="/login" element={<Login />} />
 
-            <Route
-              element={
-                <ProtectedRoute allow={["PM"]}>
-                  <AppShell nav={pmNav} />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/pm/dashboard" element={<PMDashboard />} />
-              <Route path="/pm/tasks" element={<Tasks />} />
-              <Route path="/pm/employees" element={<Employees />} />
-              <Route path="/pm/tasks/new" element={<TaskCreate />} />
-            </Route>
+              <Route
+                element={
+                  <ProtectedRoute allow={["PM"]}>
+                    <AppShell nav={pmNav} />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/pm/dashboard" element={<PMDashboard />} />
+                <Route path="/pm/tasks" element={<Tasks />} />
+                <Route path="/pm/employees" element={<Employees />} />
+                <Route path="/pm/tasks/new" element={<TaskCreate />} />
+                <Route path="/pm/settings" element={<Settings />} />
+              </Route>
 
-            <Route
-              element={
-                <ProtectedRoute allow={["EMPLOYEE"]}>
-                  <AppShell nav={employeeNav} />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/employee/profile" element={<MyProfile />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+              <Route
+                element={
+                  <ProtectedRoute allow={["EMPLOYEE"]}>
+                    <AppShell nav={employeeNav} />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/employee/profile" element={<MyProfile />} />
+                <Route path="/employee/settings" element={<Settings />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
