@@ -109,6 +109,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(id=employee.id)
             else:
                 queryset = queryset.none()
+        else:
+            # PMs see only their managed employees
+            queryset = queryset.filter(manager=user)
 
         return queryset
 
@@ -160,6 +163,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 # Create Employee
                 employee = Employee.objects.create(
                     user=user,
+                    manager=request.user, # Assign current PM as manager
                     title=title,
                     email=email
                 )
@@ -435,6 +439,9 @@ class TaskViewSet(viewsets.ModelViewSet):
                     employee=employee
                 ).values_list("task_id", flat=True)
                 queryset = queryset.filter(id__in=assigned_task_ids)
+        else:
+            # PMs see only tasks they created
+            queryset = queryset.filter(created_by=user)
 
         return queryset.order_by("-created_at")
 
@@ -610,23 +617,28 @@ class DashboardView(APIView):
                 "skills_coverage": 0
             }
         else:
+            # Filter stats by PM's data
             active_tasks = Task.objects.filter(
+                created_by=user,
                 status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).count()
 
             unassigned_tasks = Task.objects.filter(
+                created_by=user,
                 status="UNASSIGNED"
             ).count()
 
-            employees = Employee.objects.all()
+            employees = Employee.objects.filter(manager=user)
             if employees.exists():
                 total_capacity = sum(emp.current_workload for emp in employees)
                 avg_capacity = total_capacity / employees.count()
             else:
                 avg_capacity = 0
 
-            tasks_with_skills = Task.objects.exclude(task_skills__isnull=True).distinct()
-            total_tasks = Task.objects.count()
+            # Skills coverage for PM's tasks
+            pm_tasks = Task.objects.filter(created_by=user)
+            tasks_with_skills = pm_tasks.exclude(task_skills__isnull=True).distinct()
+            total_tasks = pm_tasks.count()
 
             if total_tasks > 0:
                 skills_coverage = (tasks_with_skills.count() / total_tasks) * 100

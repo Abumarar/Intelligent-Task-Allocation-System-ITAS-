@@ -21,6 +21,7 @@ class User(AbstractUser):
 class Employee(models.Model):
     """Employee profile with CV and skill information."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employee_profile')
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_employees')
     title = models.CharField(max_length=200, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
