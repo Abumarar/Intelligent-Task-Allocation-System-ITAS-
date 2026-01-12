@@ -168,6 +168,67 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         instance.delete()
         user.delete()
 
+    @action(detail=False, methods=["post"], url_path="analyze")
+    def analyze_cv(self, request):
+        """
+        Analyze a CV file and return extracted details (Name, Email, Title)
+        for pre-filling the employee creation form.
+        """
+        if "file" not in request.FILES:
+            return Response(
+                {"message": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        file = request.FILES["file"]
+        
+        # Parse PDF
+        parser = CVParser()
+        if not parser.is_valid_pdf(file):
+             return Response(
+                {"message": "Only PDF files are supported"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Read file
+        if hasattr(file, 'read'):
+            file_content = file.read()
+            file.seek(0)
+        else:
+            file_content = file
+            
+        try:
+            import io
+            import PyPDF2
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+            extracted_text = ""
+            for page in pdf_reader.pages:
+                extracted_text += page.extract_text() + "\n"
+        except Exception as e:
+                return Response(
+                {"message": f"Error parsing PDF: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Extract details using parser logic
+        details = parser.extract_details(extracted_text)
+        
+        # Fallback to AI prediction for role
+        if not details["role"]:
+            predicted_role = parser.predict_role_with_ai(extracted_text)
+            if predicted_role:
+                details["role"] = predicted_role
+                
+        # Basic Email Extraction
+        import re
+        email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', extracted_text)
+        if email_match:
+            details["email"] = email_match.group(0)
+        else:
+            details["email"] = ""
+            
+        return Response(details)
+
     @action(detail=True, methods=["post"], url_path="cv")
     def upload_cv(self, request, pk=None):
         """Upload CV for employee."""
@@ -238,6 +299,12 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     
                     # Extract and update details
                     details = parser.extract_details(extracted_text)
+                    
+                    # Fallback to AI prediction for role if heuristic failed
+                    if not details["role"]:
+                        predicted_role = parser.predict_role_with_ai(extracted_text)
+                        if predicted_role:
+                            details["role"] = predicted_role
                     
                     # Update Title if found
                     if details["role"] and (not employee.title or employee.title.startswith("New Employee")):

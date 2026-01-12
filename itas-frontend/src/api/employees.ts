@@ -46,3 +46,12 @@ export async function uploadEmployeeCV(employeeId: string, file: File) {
     });
     return res.data;
 }
+
+export async function analyzeEmployeeCV(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/employees/analyze/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data; // { name, email, role }
+}

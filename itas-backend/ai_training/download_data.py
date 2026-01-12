@@ -4,7 +4,7 @@ import shutil
 
 # Download latest version
 print("Downloading dataset...")
-path = kagglehub.dataset_download("palaksood97/resume-dataset")
+path = kagglehub.dataset_download("snehaanbhawal/resume-dataset")
 
 print("Path to dataset files:", path)
 

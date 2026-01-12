@@ -188,3 +188,47 @@ class CVParser:
         # Let's let the View handle robust skill extraction.
         
         return details
+
+    @staticmethod
+    def predict_role_with_ai(text: str) -> Optional[str]:
+        """
+        Predict role using the trained AI model.
+        """
+        import joblib
+        import os
+        import re
+        from django.conf import settings
+        
+        # Path to model - assume it's in the base dir or relative
+        # Ideally, use settings.BASE_DIR, but for now we'll assume cwd or check
+        model_path = os.path.join(settings.BASE_DIR, "resume_classifier_model.pkl")
+        
+        if not os.path.exists(model_path):
+            print(f"Model not found at {model_path}")
+            return None
+            
+        try:
+            model = joblib.load(model_path)
+            
+            # Clean text (same logic as training)
+            def clean_text(t):
+                if not isinstance(t, str): return ""
+                t = re.sub(r'http\S+\s*', ' ', t)
+                t = re.sub(r'RT|cc', ' ', t)
+                t = re.sub(r'#\S+', '', t)
+                t = re.sub(r'@\S+', '  ', t)
+                t = re.sub(r'[^\x00-\x7f]', r' ', t)
+                t = re.sub(r'\s+', ' ', t).strip()
+                return t
+                
+            cleaned = clean_text(text)
+            
+            # Predict
+            prediction = model.predict([cleaned])[0]
+            
+            # Format: 'INFORMATION-TECHNOLOGY' -> 'Information Technology'
+            return prediction.replace("-", " ").title()
+            
+        except Exception as e:
+            print(f"Error predicting role: {e}")
+            return None

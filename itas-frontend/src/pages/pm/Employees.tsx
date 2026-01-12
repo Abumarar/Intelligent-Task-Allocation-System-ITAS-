@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchEmployees,
   uploadEmployeeCV,
+  analyzeEmployeeCV,
   type Employee,
 } from "../../api/employees";
 
@@ -49,6 +50,7 @@ export default function Employees() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", title: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -86,6 +88,30 @@ export default function Employees() {
       title: employee.title || ""
     });
     setIsModalOpen(true);
+  };
+
+  const handleAnalzyeCV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAnalyzing(true);
+    setMsg(null);
+    try {
+      const data = await analyzeEmployeeCV(file);
+      setFormData(prev => ({
+        ...prev,
+        name: data.name || prev.name,
+        email: data.email || prev.email,
+        title: data.role || prev.title // API returns 'role' for title
+      }));
+      setMsg({ text: "Details auto-filled from CV.", tone: "success" });
+    } catch (err) {
+      console.error(err);
+      setMsg({ text: "Failed to analyze CV.", tone: "error" });
+    } finally {
+      setAnalyzing(false);
+      e.target.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,6 +256,20 @@ export default function Employees() {
         <div className="modal-overlay">
           <div className="modal card">
             <h2>{editingEmployee ? "Edit Employee" : "Add New Employee"}</h2>
+
+            {!editingEmployee && (
+              <div className="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-indigo-900">Auto-fill from CV</h4>
+                  <p className="text-xs text-indigo-700">Upload a resume to populate details.</p>
+                </div>
+                <label className={`btn btn-sm bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 ${analyzing ? "opacity-50" : "cursor-pointer"}`}>
+                  <input type="file" className="hidden" accept=".pdf" onChange={handleAnalzyeCV} disabled={analyzing} />
+                  {analyzing ? "Analyzing..." : "Upload CV"}
+                </label>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit}>
               <div className="field">
                 <label className="field-label">Name</label>
