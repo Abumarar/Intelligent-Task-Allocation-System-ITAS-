@@ -7,7 +7,9 @@ export type Employee = {
     email?: string;
     skills?: string[];
     cvStatus?: "NOT_UPLOADED" | "PROCESSING" | "READY" | "FAILED";
+
     cvUpdatedAt?: string;
+    current_workload?: number;
 };
 
 export async function fetchEmployees(params?: { page?: number; limit?: number }): Promise<Employee[]> {

@@ -36,7 +36,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Employee
-        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt']
+        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'current_workload']
         read_only_fields = ['id']
     
     def get_skills(self, obj):
@@ -103,12 +103,12 @@ class TaskSerializer(serializers.ModelSerializer):
     
     def get_assigned_to(self, obj):
         """Get ID of currently assigned employee."""
-        assignment = obj.assignments.filter(status__in=['ASSIGNED', 'IN_PROGRESS']).first()
+        assignment = obj.assignments.filter(status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']).first()
         return str(assignment.employee.id) if assignment else None
 
     def get_assigned_to_name(self, obj):
         """Get name of currently assigned employee."""
-        assignment = obj.assignments.filter(status__in=['ASSIGNED', 'IN_PROGRESS']).first()
+        assignment = obj.assignments.filter(status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']).first()
         return assignment.employee.name if assignment else None
     
     def create(self, validated_data):

@@ -45,7 +45,7 @@ class Employee(models.Model):
     def current_workload(self):
         """Calculate current workload as percentage of capacity."""
         active_tasks = self.taskassignment_set.filter(
-            status__in=['ASSIGNED', 'IN_PROGRESS']
+            status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']
         ).count()
         # Assuming max capacity of 5 active tasks = 100%
         max_capacity = 5
@@ -109,6 +109,7 @@ class Task(models.Model):
         ('UNASSIGNED', 'Unassigned'),
         ('ASSIGNED', 'Assigned'),
         ('IN_PROGRESS', 'In Progress'),
+        ('BLOCKED', 'Blocked'),
         ('COMPLETED', 'Completed'),
         ('CANCELLED', 'Cancelled'),
     ]
@@ -151,6 +152,7 @@ class TaskAssignment(models.Model):
     STATUS_CHOICES = [
         ('ASSIGNED', 'Assigned'),
         ('IN_PROGRESS', 'In Progress'),
+        ('BLOCKED', 'Blocked'),
         ('COMPLETED', 'Completed'),
         ('CANCELLED', 'Cancelled'),
     ]

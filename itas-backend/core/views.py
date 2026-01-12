@@ -272,7 +272,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         assignments = TaskAssignment.objects.filter(
             employee=employee,
-            status__in=["ASSIGNED", "IN_PROGRESS"]
+            status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
         ).select_related("task")
 
         tasks_data = []
@@ -397,7 +397,7 @@ class DashboardView(APIView):
 
             active_tasks = TaskAssignment.objects.filter(
                 employee=employee,
-                status__in=["ASSIGNED", "IN_PROGRESS"]
+                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).count()
 
             capacity = employee.current_workload
@@ -410,7 +410,7 @@ class DashboardView(APIView):
             }
         else:
             active_tasks = Task.objects.filter(
-                status__in=["ASSIGNED", "IN_PROGRESS"]
+                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).count()
 
             unassigned_tasks = Task.objects.filter(

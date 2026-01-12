@@ -5,12 +5,13 @@ import { fetchTasks, updateTask, assignTask, type Task } from "../../api/tasks";
 import { fetchEmployees } from "../../api/employees";
 
 // Define TaskStatus type for type safety
-type TaskStatus = "DRAFT" | "UNASSIGNED" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+type TaskStatus = "DRAFT" | "UNASSIGNED" | "ASSIGNED" | "IN_PROGRESS" | "BLOCKED" | "COMPLETED" | "CANCELLED";
 
 const COLUMNS: { id: string; title: string; statuses: TaskStatus[]; color: string; border: string; bg: string }[] = [
     { id: "todo", title: "To Do", statuses: ["DRAFT", "UNASSIGNED"], color: "text-slate-600", border: "border-slate-200", bg: "bg-slate-50/50" },
     { id: "assigned", title: "Assigned", statuses: ["ASSIGNED"], color: "text-blue-600", border: "border-blue-200", bg: "bg-blue-50/50" },
     { id: "inprogress", title: "In Progress", statuses: ["IN_PROGRESS"], color: "text-amber-600", border: "border-amber-200", bg: "bg-amber-50/50" },
+    { id: "blocked", title: "Blocked", statuses: ["BLOCKED"], color: "text-red-600", border: "border-red-200", bg: "bg-red-50/50" },
     { id: "done", title: "Done", statuses: ["COMPLETED"], color: "text-emerald-600", border: "border-emerald-200", bg: "bg-emerald-50/50" },
 ];
 
@@ -155,6 +156,17 @@ export default function Tasks() {
                                                 {task.title}
                                             </h3>
 
+                                            {/* Skills */}
+                                            {task.requiredSkills && task.requiredSkills.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {task.requiredSkills.map(skill => (
+                                                        <span key={skill} className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                                                            {skill}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                             {/* Divider */}
                                             <div className="h-px bg-slate-100" />
 
@@ -171,6 +183,7 @@ export default function Tasks() {
                                                         <option value="UNASSIGNED">Unassigned</option>
                                                         <option value="ASSIGNED">Assigned</option>
                                                         <option value="IN_PROGRESS">In Progress</option>
+                                                        <option value="BLOCKED">Blocked</option>
                                                         <option value="COMPLETED">Done</option>
                                                         <option value="CANCELLED">Cancel</option>
                                                     </select>
@@ -185,8 +198,8 @@ export default function Tasks() {
                                                 <div className="relative flex-1 max-w-[140px]">
                                                     <select
                                                         className={`appearance-none w-full pl-7 pr-6 py-1 border rounded-lg text-xs font-semibold cursor-pointer outline-none transition-all ${task.assigned_to
-                                                                ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-                                                                : "bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600"
+                                                            ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                                            : "bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600"
                                                             }`}
                                                         value={task.assigned_to || ""}
                                                         onChange={(e) => handleAssign(task.id, e.target.value)}

@@ -53,3 +53,8 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+
+# AI/ML
+dataset/
+*.pkl
+ai_training/__pycache__/

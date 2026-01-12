@@ -11,6 +11,7 @@ export type TaskStatus =
     | "UNASSIGNED"
     | "ASSIGNED"
     | "IN_PROGRESS"
+    | "BLOCKED"
     | "DONE"
     | (string & {});
 

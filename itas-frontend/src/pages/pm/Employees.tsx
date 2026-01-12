@@ -23,7 +23,14 @@ const statusClass = (status?: Employee["cvStatus"]) => {
   if (status === "READY") return "status-ready";
   if (status === "PROCESSING") return "status-processing";
   if (status === "FAILED") return "status-failed";
+
   return "status-missing";
+};
+
+const getWorkloadColor = (load: number) => {
+  if (load >= 80) return "bg-red-500";
+  if (load >= 50) return "bg-amber-500";
+  return "bg-emerald-500";
 };
 
 export default function Employees() {
@@ -318,6 +325,20 @@ export default function Employees() {
                   <div className="muted">Last update</div>
                   <div>{updatedAt}</div>
                 </div>
+                <div className="employee-workload">
+                  <div className="muted">Workload</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${getWorkloadColor(employee.current_workload || 0)}`}
+                        style={{ width: `${Math.min(employee.current_workload || 0, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-slate-600">
+                      {Math.round(employee.current_workload || 0)}%
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="card-actions">
@@ -358,6 +379,6 @@ export default function Employees() {
           );
         })}
       </div>
-    </div>
+    </div >
   );
 }
