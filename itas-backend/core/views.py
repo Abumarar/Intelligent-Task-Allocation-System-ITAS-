@@ -635,22 +635,31 @@ class TaskViewSet(viewsets.ModelViewSet):
             task.required_skills
         )
 
-        assignment, created = TaskAssignment.objects.get_or_create(
-            task=task,
-            employee=employee,
-            defaults={
-                "suitability_score": score,
-                "status": "ASSIGNED"
-            }
-        )
+        active_statuses = ["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
 
-        if not created:
-            assignment.suitability_score = score
-            assignment.status = "ASSIGNED"
-            assignment.save()
+        with transaction.atomic():
+            TaskAssignment.objects.filter(
+                task=task,
+                status__in=active_statuses
+            ).exclude(employee=employee).update(status="CANCELLED")
 
-        task.status = "ASSIGNED"
-        task.save()
+            assignment, created = TaskAssignment.objects.get_or_create(
+                task=task,
+                employee=employee,
+                defaults={
+                    "suitability_score": score,
+                    "status": "ASSIGNED"
+                }
+            )
+
+            if not created:
+                assignment.suitability_score = score
+                if assignment.status not in active_statuses:
+                    assignment.status = "ASSIGNED"
+                assignment.save()
+
+            task.status = "ASSIGNED"
+            task.save()
 
         serializer = TaskAssignmentSerializer(assignment)
         return Response(serializer.data)

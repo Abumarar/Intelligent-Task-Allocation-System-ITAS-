@@ -118,12 +118,16 @@ class TaskSerializer(serializers.ModelSerializer):
     
     def get_assigned_to(self, obj):
         """Get ID of currently assigned employee."""
-        assignment = obj.assignments.filter(status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']).first()
+        assignment = obj.assignments.filter(
+            status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']
+        ).order_by('-assigned_at').first()
         return str(assignment.employee.id) if assignment else None
 
     def get_assigned_to_name(self, obj):
         """Get name of currently assigned employee."""
-        assignment = obj.assignments.filter(status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']).first()
+        assignment = obj.assignments.filter(
+            status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']
+        ).order_by('-assigned_at').first()
         return assignment.employee.name if assignment else None
     
     def create(self, validated_data):
