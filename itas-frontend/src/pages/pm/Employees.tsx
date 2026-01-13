@@ -139,13 +139,14 @@ export default function Employees() {
         // Create employee with initial details
         const newEmployee = await createEmployee(formData);
 
-        // If we have an uploaded CV file, upload it now
         if (uploadedFile) {
           setMsg({ text: "Employee created. Uploading CV...", tone: "success" });
           await uploadEmployeeCV(newEmployee.id, uploadedFile);
         }
         setMsg({ text: "Employee added and CV uploaded.", tone: "success" });
       }
+      // Small delay to allow backend to initialize CV record
+      await new Promise(r => setTimeout(r, 500));
       await qc.invalidateQueries({ queryKey: ["employees"] });
       setIsModalOpen(false);
     } catch (e: unknown) {

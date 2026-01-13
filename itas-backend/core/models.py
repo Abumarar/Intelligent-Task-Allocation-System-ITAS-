@@ -122,6 +122,7 @@ class Task(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    start_date = models.DateTimeField(blank=True, null=True)
     due_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:

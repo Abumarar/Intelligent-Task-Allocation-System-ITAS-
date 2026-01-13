@@ -27,6 +27,7 @@ export type Task = {
 
     created_at?: ISODateString;
     updated_at?: ISODateString;
+    start_date?: ISODateString;
     due_date?: ISODateString;
 
     assigned_to?: string;
@@ -38,6 +39,7 @@ export type TaskCreateInput = {
     description?: string;
     priority: Priority;
     requiredSkills: string[];
+    start_date?: ISODateString;
     due_date?: ISODateString;
 };
 

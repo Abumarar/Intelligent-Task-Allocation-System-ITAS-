@@ -18,6 +18,8 @@ export default function TaskCreate() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+  const [startDate, setStartDate] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -32,6 +34,8 @@ export default function TaskCreate() {
     setTitle("");
     setDesc("");
     setPriority("MEDIUM");
+    setStartDate("");
+    setDueDate("");
     setSkills([]);
     setCreatedTaskId(null);
     setMatches([]);
@@ -54,6 +58,7 @@ export default function TaskCreate() {
       if (data.title) setTitle(data.title);
       if (data.description) setDesc(data.description);
       if (data.priority) setPriority(data.priority as "LOW" | "MEDIUM" | "HIGH");
+      if (data.dueDate) setDueDate(new Date(data.dueDate).toISOString().split('T')[0]);
       if (data.requiredSkills && data.requiredSkills.length > 0) {
         // Merge with existing skill tags
         const newSkills = Array.from(new Set([...skills, ...data.requiredSkills]));
@@ -81,6 +86,8 @@ export default function TaskCreate() {
         description: desc,
         priority,
         requiredSkills: skills,
+        start_date: startDate || undefined,
+        due_date: dueDate || undefined,
       });
 
       // Capture matches if returned
@@ -274,6 +281,35 @@ export default function TaskCreate() {
                 onChange={(e) => setDesc(e.target.value)}
                 placeholder="Include scope, dependencies, and desired deliverables."
               />
+            </div>
+          </section>
+
+          <section className="card form-section">
+            <div className="section-header">
+              <h2 className="section-title">Timeline</h2>
+              <p className="section-desc">Set the schedule for this task.</p>
+            </div>
+            <div className="flex gap-4">
+              <div className="field flex-1">
+                <label className="field-label" htmlFor="startDate">Start Date</label>
+                <input
+                  id="startDate"
+                  type="date"
+                  className="input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="field flex-1">
+                <label className="field-label" htmlFor="dueDate">Due Date</label>
+                <input
+                  id="dueDate"
+                  type="date"
+                  className="input"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
             </div>
           </section>
 
