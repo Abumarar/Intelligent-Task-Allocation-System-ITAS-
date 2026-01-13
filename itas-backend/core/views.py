@@ -654,8 +654,10 @@ class TaskViewSet(viewsets.ModelViewSet):
 
             if not created:
                 assignment.suitability_score = score
-                if assignment.status not in active_statuses:
-                    assignment.status = "ASSIGNED"
+                # If reactivating an old assignment (or even if already active),
+                # update the timestamp so it appears as the most recent.
+                assignment.status = "ASSIGNED"
+                assignment.assigned_at = timezone.now()
                 assignment.save()
 
             task.status = "ASSIGNED"
