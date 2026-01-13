@@ -58,14 +58,21 @@ class EmailService:
 
     @staticmethod
     def send_email(subject, message, recipient_list):
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                recipient_list,
-                fail_silently=True,  # Don't crash app if email fails
-            )
-            print(f"Email sent to {recipient_list}: {subject}")
-        except Exception as e:
-            print(f"Failed to send email: {e}")
+        def _send():
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    recipient_list,
+                    fail_silently=True,  # Don't crash app if email fails
+                )
+                print(f"Email sent to {recipient_list}: {subject}")
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+        
+        # Run in a separate thread to avoid blocking
+        import threading
+        email_thread = threading.Thread(target=_send)
+        email_thread.daemon = True
+        email_thread.start()
