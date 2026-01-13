@@ -60,14 +60,14 @@ class EmailService:
     def send_email(subject, message, recipient_list):
         def _send():
             # DEBUG: Check config
-            # print(f"DEBUG: EMAIL_HOST={settings.EMAIL_HOST}, USER={settings.EMAIL_HOST_USER}")
+            print(f"DEBUG: EMAIL_HOST={settings.EMAIL_HOST}, USER={settings.EMAIL_HOST_USER}")
             try:
                 send_mail(
                     subject,
                     message,
                     settings.DEFAULT_FROM_EMAIL,
                     recipient_list,
-                    fail_silently=True,  # Don't crash app if email fails
+                    fail_silently=False,  # Raise errors so we can catch and log them
                 )
                 print(f"Email sent to {recipient_list}: {subject}")
             except Exception as e:
