@@ -768,3 +768,47 @@ def debug_media(request):
         "DEBUG": settings.DEBUG,
         "Service": "ITAS Backend API"
     })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def debug_email(request):
+    """Debug view to test email sending."""
+    from django.core.mail import send_mail
+    from django.conf import settings
+    
+    recipient = request.GET.get('recipient')
+    if not recipient:
+        return Response(
+            {"message": "Please provide 'recipient' query parameter"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    try:
+        send_mail(
+             "Debug Email Test",
+             f"This is a test email sent from {settings.EMAIL_HOST}",
+             settings.DEFAULT_FROM_EMAIL,
+             [recipient],
+             fail_silently=False,
+        )
+        return Response ({
+            "status": "SUCCESS", 
+            "message": f"Email sent to {recipient}",
+            "config": {
+                "HOST": settings.EMAIL_HOST,
+                "PORT": settings.EMAIL_PORT,
+                "USER": settings.EMAIL_HOST_USER[:3] + "***" if settings.EMAIL_HOST_USER else "NOT SET",
+                "TLS": settings.EMAIL_USE_TLS
+            }
+        })
+    except Exception as e:
+        return Response({
+            "status": "FAILED", 
+            "error": str(e),
+            "config": {
+                 "HOST": settings.EMAIL_HOST,
+                 "PORT": settings.EMAIL_PORT,
+                 "USER": settings.EMAIL_HOST_USER[:3] + "***" if settings.EMAIL_HOST_USER else "NOT SET",
+                 "TLS": settings.EMAIL_USE_TLS
+            }
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
