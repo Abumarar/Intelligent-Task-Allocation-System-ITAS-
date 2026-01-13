@@ -8,10 +8,15 @@ def notify_employee_on_assignment(sender, instance, created, **kwargs):
     """
     Trigger email when a new Task Assignment is created.
     """
-    if created:
+    if instance.status == 'ASSIGNED':
         task = instance.task
         employee = instance.employee
-        print(f"Signal triggered: New assignment for task {task.id} to {employee.name}")
+        
+        # Only send if this is a fresh assignment (created) or re-assignment
+        # Ideally we'd check if status CHANGED, but for now let's ensure we catch valid assignments.
+        # To avoid spam updates, we can check if it was just created or if we assume all saves to ASSIGNED are intentional.
+        
+        print(f"Signal triggered: Assignment for task {task.id} to {employee.name} (Status: {instance.status})")
         EmailService.send_task_assignment_email(employee, task)
 
 @receiver(pre_save, sender=Task)

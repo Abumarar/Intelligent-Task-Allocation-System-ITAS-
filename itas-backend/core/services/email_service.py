@@ -59,6 +59,8 @@ class EmailService:
     @staticmethod
     def send_email(subject, message, recipient_list):
         def _send():
+            # DEBUG: Check config
+            # print(f"DEBUG: EMAIL_HOST={settings.EMAIL_HOST}, USER={settings.EMAIL_HOST_USER}")
             try:
                 send_mail(
                     subject,
