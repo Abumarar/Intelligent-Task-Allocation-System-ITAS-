@@ -1,19 +1,41 @@
+import { useState } from "react";
 import { useAuth } from "../../auth/hooks";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMyProfile } from "../../api/profile";
+import { uploadEmployeeCV } from "../../api/employees";
 
-const growthGoals = [
-  "Lead a cross-team discovery sprint",
-  "Mentor a junior analyst",
-  "Complete cloud fundamentals certification",
-];
+
 
 export default function MyProfile() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const { data: profileData, isLoading, error } = useQuery({
     queryKey: ["my-profile"],
     queryFn: fetchMyProfile,
   });
+
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profileData?.employee?.id) return;
+
+    setUploading(true);
+    setUploadMsg(null);
+    try {
+      await uploadEmployeeCV(profileData.employee.id, file);
+      setUploadMsg({ type: "success", text: "CV uploaded! Skills will update shortly." });
+      // Refresh profile to see status change
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+    } catch (err) {
+      console.error(err);
+      setUploadMsg({ type: "error", text: "Failed to upload CV." });
+    } finally {
+      setUploading(false);
+      e.target.value = ""; // Reset input
+    }
+  };
 
   const skills = profileData?.employee?.skills || [];
   const tasks = profileData?.tasks || [];
@@ -124,22 +146,45 @@ export default function MyProfile() {
           </div>
         </section>
 
+
+
         <section className="card">
           <div className="card-header">
             <div>
-              <h2 className="card-title">Growth focus</h2>
-              <p className="card-subtitle">Personal development goals.</p>
+              <h2 className="card-title">CV & Portfolio</h2>
+              <p className="card-subtitle">Upload your CV to auto-extract skills.</p>
             </div>
+            {profileData?.employee?.cvStatus && (
+              <span className={`badge ${profileData.employee.cvStatus === 'READY' ? 'status-success' :
+                profileData.employee.cvStatus === 'FAILED' ? 'status-error' :
+                  'status-processing'
+                }`}>
+                {profileData.employee.cvStatus}
+              </span>
+            )}
           </div>
-          <div className="checklist">
-            {growthGoals.map((goal) => (
-              <div key={goal} className="check-item">
-                {goal}
+
+          <div className="p-4">
+            <label className={`btn btn-outline w-full ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={handleCVUpload}
+                disabled={uploading}
+              />
+              {uploading ? "Uploading..." : "Upload New CV"}
+            </label>
+            {uploadMsg && (
+              <div className={`mt-3 text-sm ${uploadMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                {uploadMsg.text}
               </div>
-            ))}
-          </div>
-          <div className="callout">
-            Add or update goals during your next 1:1 sync.
+            )}
+            {profileData?.employee?.cvUpdatedAt && (
+              <div className="mt-2 text-xs text-center text-slate-400">
+                Last updated: {new Date(profileData.employee.cvUpdatedAt).toLocaleDateString()}
+              </div>
+            )}
           </div>
         </section>
       </div>
