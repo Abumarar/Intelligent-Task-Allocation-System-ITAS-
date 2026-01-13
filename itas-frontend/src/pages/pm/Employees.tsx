@@ -6,6 +6,7 @@ import {
   analyzeEmployeeCV,
   type Employee,
 } from "../../api/employees";
+import { unassignTask } from "../../api/tasks";
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -54,6 +55,7 @@ export default function Employees() {
   const [analyzing, setAnalyzing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedSkillsId, setExpandedSkillsId] = useState<string | null>(null);
+  const [viewingTasksEmployee, setViewingTasksEmployee] = useState<Employee | null>(null);
 
   const filtered = useMemo(() => {
     const list = data || [];
@@ -192,6 +194,26 @@ export default function Employees() {
       });
     } finally {
       setUploadingId(null);
+    }
+  };
+
+  const handleUnassignTask = async (taskId: string, employeeId: string) => {
+    try {
+      await unassignTask(taskId);
+      setMsg({ text: "Task unassigned successfully.", tone: "success" });
+
+      // Update local state for immediate feedback
+      if (viewingTasksEmployee && viewingTasksEmployee.id === employeeId) {
+        setViewingTasksEmployee(prev => prev ? ({
+          ...prev,
+          assigned_tasks: prev.assigned_tasks?.filter(t => t.id !== taskId)
+        }) : null);
+      }
+
+      await qc.invalidateQueries({ queryKey: ["employees"] });
+    } catch (e) {
+      console.error(e);
+      setMsg({ text: "Failed to unassign task.", tone: "error" });
     }
   };
 
@@ -451,6 +473,13 @@ export default function Employees() {
                   ✏️
                 </button>
                 <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setViewingTasksEmployee(employee)}
+                  title="Manage Tasks"
+                >
+                  📋
+                </button>
+                <button
                   className="btn btn-ghost btn-danger btn-sm"
                   onClick={() => handleDelete(employee.id, employee.name)}
                   disabled={deletingId === employee.id}
@@ -463,6 +492,51 @@ export default function Employees() {
           );
         })}
       </div>
-    </div >
+      {viewingTasksEmployee && (
+        <div className="modal-overlay">
+          <div className="modal card w-[600px] max-w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Tasks Assigned to {viewingTasksEmployee.name}</h2>
+              <button className="btn btn-ghost btn-sm" onClick={() => setViewingTasksEmployee(null)}>✕</button>
+            </div>
+
+            <div className="space-y-3">
+              {viewingTasksEmployee.assigned_tasks && viewingTasksEmployee.assigned_tasks.length > 0 ? (
+                viewingTasksEmployee.assigned_tasks.map(task => (
+                  <div key={task.id} className="p-3 bg-slate-50 border border-slate-100 rounded-lg flex justify-between items-center group hover:bg-white hover:shadow-sm transition-all">
+                    <div>
+                      <div className="font-medium text-slate-800">{task.title}</div>
+                      <div className="text-xs text-slate-500 flex gap-2 mt-1">
+                        <span className={`px-1.5 py-0.5 rounded ${task.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                          task.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+                            'bg-emerald-100 text-emerald-700'
+                          }`}>{task.priority}</span>
+                        <span>Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No date'}</span>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-sm border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                      onClick={() => handleUnassignTask(task.id, viewingTasksEmployee.id)}
+                      title="Unassign Task"
+                    >
+                      Unassign
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
+                  No active tasks assigned.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button className="btn btn-primary" onClick={() => setViewingTasksEmployee(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 }

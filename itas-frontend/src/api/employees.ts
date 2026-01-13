@@ -12,6 +12,14 @@ export type Employee = {
     cvErrorMessage?: string;
     cvUrl?: string;
     current_workload?: number;
+    assigned_tasks?: {
+        id: string;
+        title: string;
+        status: string;
+        priority: string;
+        due_date?: string;
+        suitability_score?: number;
+    }[];
 };
 
 export async function fetchEmployees(params?: { page?: number; limit?: number }): Promise<Employee[]> {

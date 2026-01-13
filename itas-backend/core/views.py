@@ -666,6 +666,26 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = TaskAssignmentSerializer(assignment)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"], url_path="unassign")
+    def unassign_task(self, request, pk=None):
+        """Unassign task from current employee."""
+        task = self.get_object()
+        
+        with transaction.atomic():
+            # Update all active assignments to CANCELLED (or completed/history if we preferred, but CANCELLED implies unassigned)
+            # Actually if we unassign, we probably want to keep history?
+            # But earlier logic uses CANCELLED for "overwritten" assignments.
+            # Let's set status to CANCELLED for the active assignment.
+            TaskAssignment.objects.filter(
+                task=task,
+                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
+            ).update(status="CANCELLED")
+            
+            task.status = "UNASSIGNED"
+            task.save()
+            
+        return Response({"message": "Task unassigned successfully"})
+
 
 class DashboardView(APIView):
     """Dashboard statistics endpoint."""

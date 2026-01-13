@@ -35,12 +35,27 @@ class EmployeeSerializer(serializers.ModelSerializer):
     cvUpdatedAt = serializers.SerializerMethodField()
     cvErrorMessage = serializers.SerializerMethodField()
     cvUrl = serializers.SerializerMethodField()
+    assigned_tasks = serializers.SerializerMethodField()
     
     class Meta:
         model = Employee
-        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'cvErrorMessage', 'cvUrl', 'current_workload']
+        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'cvErrorMessage', 'cvUrl', 'current_workload', 'assigned_tasks']
         read_only_fields = ['id']
     
+    def get_assigned_tasks(self, obj):
+        assignments = obj.taskassignment_set.filter(
+            status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']
+        ).select_related('task')
+        
+        return [{
+            'id': str(a.task.id),
+            'title': a.task.title,
+            'status': a.status,
+            'priority': a.task.priority,
+            'due_date': a.task.due_date,
+            'suitability_score': a.suitability_score
+        } for a in assignments]
+
     def get_skills(self, obj):
         return obj.skills
     
