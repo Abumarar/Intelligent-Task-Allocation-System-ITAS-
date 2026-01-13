@@ -14,7 +14,7 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0
 pandas==2.2.3
 scikit-learn==1.6.0
 joblib==1.4.2
-kagglehub==0.3.6
+kagglehub>=0.4.0
 python-docx==1.1.2
 # Force rebuild
 # Trigger deploy for skills update
