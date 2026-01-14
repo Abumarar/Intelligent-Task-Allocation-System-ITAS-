@@ -36,10 +36,16 @@ function HomeRedirect() {
   );
 }
 
+import { useState } from "react";
+import LoadingScreen from "./components/LoadingScreen";
+
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
         <AuthProvider>
           <BrowserRouter>
             <Routes>
