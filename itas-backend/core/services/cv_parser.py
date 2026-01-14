@@ -264,42 +264,57 @@ class CVParser:
         return details
 
     @staticmethod
-    def predict_role_with_ai(text: str) -> Optional[str]:
+    def predict_role_with_ai(text: str, min_confidence: float = 0.45) -> Optional[str]:
         """
         Predict role using the trained AI model.
         """
         import joblib
         import os
-        import re
         from django.conf import settings
+        from core.services.text_preprocessor import clean_text
         
-        # Path to model - assume it's in the base dir or relative
-        # Ideally, use settings.BASE_DIR, but for now we'll assume cwd or check
-        model_path = os.path.join(settings.BASE_DIR, "resume_classifier_model.pkl")
-        
-        if not os.path.exists(model_path):
-            print(f"CV_PARSER_ERROR: Model not found at {model_path}")
+        model_path = os.environ.get("RESUME_MODEL_PATH")
+        if not model_path:
+            candidates = [
+                os.path.join(settings.BASE_DIR, "resume_classifier_model.pkl"),
+                os.path.join(settings.BASE_DIR, "..", "resume_classifier_model.pkl"),
+            ]
+            for candidate in candidates:
+                if os.path.exists(candidate):
+                    model_path = candidate
+                    break
+
+        if not model_path or not os.path.exists(model_path):
+            print("CV_PARSER_ERROR: Model file not found.")
             return None
             
         try:
-            model = joblib.load(model_path)
-            
-            # Clean text (same logic as training)
-            def clean_text(t):
-                if not isinstance(t, str): return ""
-                t = re.sub(r'http\S+\s*', ' ', t)
-                t = re.sub(r'RT|cc', ' ', t)
-                t = re.sub(r'#\S+', '', t)
-                t = re.sub(r'@\S+', '  ', t)
-                t = re.sub(r'[^\x00-\x7f]', r' ', t)
-                t = re.sub(r'\s+', ' ', t).strip()
-                return t
-                
+            model_obj = joblib.load(model_path)
+            if isinstance(model_obj, dict) and "model" in model_obj:
+                model = model_obj["model"]
+            else:
+                model = model_obj
+
             cleaned = clean_text(text)
+            if not cleaned:
+                return None
+
             print(f"CV_PARSER_DEBUG: Model loaded. Predicting for text length {len(cleaned)}")
-            
-            # Predict
-            prediction = model.predict([cleaned])[0]
+
+            confidence = None
+            if hasattr(model, "predict_proba"):
+                probs = model.predict_proba([cleaned])[0]
+                best_idx = int(probs.argmax())
+                confidence = float(probs[best_idx])
+                prediction = model.classes_[best_idx]
+                print(f"CV_PARSER_DEBUG: Prediction confidence: {confidence:.3f}")
+            else:
+                prediction = model.predict([cleaned])[0]
+
+            if confidence is not None and confidence < min_confidence:
+                print("CV_PARSER_DEBUG: Low confidence prediction, skipping role.")
+                return None
+
             print(f"CV_PARSER_DEBUG: Raw prediction: {prediction}")
             
             # Format: 'INFORMATION-TECHNOLOGY' -> 'Information Technology'
