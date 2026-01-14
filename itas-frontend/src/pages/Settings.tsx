@@ -93,8 +93,8 @@ export default function Settings() {
 
                         {message && (
                             <div className={`p-3 rounded-lg text-sm mb-4 ${message.type === "success"
-                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                 }`}>
                                 {message.text}
                             </div>
@@ -118,9 +118,15 @@ export default function Settings() {
                                         type="email"
                                         className="input"
                                         value={email}
+                                        disabled={user?.role === "EMPLOYEE"}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="name@company.com"
                                     />
+                                    {user?.role === "EMPLOYEE" && (
+                                        <p className="text-xs text-[var(--muted)] mt-1">
+                                            Contact your Admin/PM to change email.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
