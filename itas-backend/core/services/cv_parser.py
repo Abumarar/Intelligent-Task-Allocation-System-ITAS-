@@ -127,22 +127,41 @@ class CVParser:
         }
         
         try:
+            # 1. Regex Extraction (High Confidence for structured CVs)
+            
+            # Extract Name
+            name_match = re.search(r"Name:\s*(.+)", text, re.IGNORECASE)
+            if name_match:
+                 details["name"] = name_match.group(1).strip()
+            
+            # Extract Role/Title (This maps to 'Title' in the frontend)
+            role_match = re.search(r"(?:Role|Title|Position):\s*(.+)", text, re.IGNORECASE)
+            if role_match:
+                 details["role"] = role_match.group(1).strip()
+
+            # If Regex found both, return early (Fast Path)
+            if details["name"] and details["role"]:
+                print(f"CV_PARSER_DEBUG: Regex found Name: {details['name']}, Role: {details['role']}")
+                return details
+
+            # 2. Extract Name (Person) via spaCy (Fallback)
+            # Strategy: First PERSON entity found in the first 1000 characters
             nlp = spacy.load("en_core_web_sm")
             doc = nlp(text)
-            
-            # 1. Extract Name (Person)
-            # Strategy: First PERSON entity found in the first 500 characters
-            # that is distinct from common headers
-            first_chunk = text[:1000]
-            chunk_doc = nlp(first_chunk)
-            
-            for ent in chunk_doc.ents:
-                if ent.label_ == "PERSON":
-                    clean_name = ent.text.strip().title()
-                    # Basic filter: 2+ words, no weird symbols
-                    if len(clean_name.split()) >= 2 and re.match(r"^[A-Za-z\s\.\-]+$", clean_name):
-                        details["name"] = clean_name
-                        break
+
+            if not details["name"]:
+                first_chunk = text[:1000]
+                chunk_doc = nlp(first_chunk)
+                
+                for ent in chunk_doc.ents:
+                    if ent.label_ == "PERSON":
+                        clean_name = ent.text.strip().title()
+                        # Basic filter: 2+ words, no weird symbols, and ignore "Name" keyword if caught
+                        if (len(clean_name.split()) >= 2 and 
+                            re.match(r"^[A-Za-z\s\.\-]+$", clean_name) and 
+                            clean_name.lower() != "name"):
+                            details["name"] = clean_name
+                            break
             
             # 2. Extract Role
             # Strategy: Look for common job titles
