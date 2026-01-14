@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../../auth/hooks";
 import logo from "../../assets/ITAS-logo.png";
@@ -16,12 +17,30 @@ const getInitials = (name: string) => {
 
 export default function AppShell({ nav }: { nav: NavItem[] }) {
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const name = user?.name || "User";
   const roleLabel = user?.role === "PM" ? "Project Manager" : "Employee";
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {/* Mobile Top Bar */}
+      <div className="mobile-header">
+        <div className="brand-mark">
+          <img className="brand-logo" src={logo} alt="ITAS logo" />
+        </div>
+        <button
+          className="btn btn-ghost btn-icon"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <aside className={`sidebar ${isMobileMenuOpen ? "is-open" : ""}`}>
         <div className="brand">
           <div className="brand-mark">
             <img className="brand-logo" src={logo} alt="ITAS logo" />
@@ -38,6 +57,7 @@ export default function AppShell({ nav }: { nav: NavItem[] }) {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
             >
               <span>{item.label}</span>
@@ -59,6 +79,10 @@ export default function AppShell({ nav }: { nav: NavItem[] }) {
           </button>
         </div>
       </aside>
+
+      {isMobileMenuOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
 
       <div className="main">
         <header className="topbar">
