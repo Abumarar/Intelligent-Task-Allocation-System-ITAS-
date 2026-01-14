@@ -10,6 +10,7 @@ export default function Settings() {
     const [name, setName] = useState(user?.name || "");
     const [email, setEmail] = useState(user?.email || "");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -26,6 +27,12 @@ export default function Settings() {
         setIsSubmitting(true);
         setMessage(null);
 
+        if (password && password !== confirmPassword) {
+            setMessage({ type: "error", text: "Passwords do not match." });
+            setIsSubmitting(false);
+            return;
+        }
+
         const data: Record<string, string> = {};
         if (name && name !== user?.name) data.name = name;
         if (email && email !== user?.email) data.email = email;
@@ -40,6 +47,7 @@ export default function Settings() {
             await api.patch("/auth/login", data);
             setMessage({ type: "success", text: "Profile updated successfully. Please refresh to see changes." });
             setPassword("");
+            setConfirmPassword("");
         } catch (err: any) {
             setMessage({ type: "error", text: err.response?.data?.message || "Failed to update profile" });
         } finally {
@@ -142,6 +150,19 @@ export default function Settings() {
                                 />
                                 <p className="text-xs text-[var(--muted)]">Leave blank to keep current password.</p>
                             </div>
+
+                            {password && (
+                                <div className="field reveal">
+                                    <label className="field-label">Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        className="input"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Confirm new password"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="form-actions mt-6">
