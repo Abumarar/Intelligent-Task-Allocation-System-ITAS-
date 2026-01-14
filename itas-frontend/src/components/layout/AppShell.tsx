@@ -77,6 +77,9 @@ export default function AppShell({ nav }: { nav: NavItem[] }) {
           <button type="button" className="btn btn-ghost" onClick={logout}>
             Sign out
           </button>
+          <div style={{ marginTop: "8px", fontSize: "0.7rem", color: "var(--muted)", textAlign: "center" }}>
+            &copy; {new Date().getFullYear()} <a href="https://github.com/Abumarar" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--accent)]">Mohammad Abumarar</a>
+          </div>
         </div>
       </aside>
 

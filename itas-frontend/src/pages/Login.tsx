@@ -63,7 +63,10 @@ export default function Login() {
         </div>
 
         <div className="auth-footer">
-          Need access? Contact your PM lead or ITAS admin.
+          <p>Need access? Contact your PM lead or ITAS admin.</p>
+          <div style={{ marginTop: "12px", fontSize: "0.8rem", opacity: 0.8 }}>
+            &copy; {new Date().getFullYear()} <a href="https://github.com/Abumarar" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>Mohammad Abumarar</a>
+          </div>
         </div>
       </div>
 
