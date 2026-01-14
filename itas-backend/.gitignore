@@ -31,7 +31,7 @@ ENV/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-/media
+# /media  <-- Commented out to allow committing demo media files
 /staticfiles
 
 # Environment variables
