@@ -69,7 +69,10 @@
 .dark .user-card,
 .dark .stat-card,
 .dark .modal,
-.dark .employee-card {
+.dark .employee-card,
+.dark .auth-card,
+.dark .highlight-card,
+.dark .tag-input {
   background: var(--panel);
   border-color: var(--line);
 }
@@ -133,6 +136,17 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+.dark .demo-section {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: var(--line);
+}
+
+.dark .badge {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 a {
