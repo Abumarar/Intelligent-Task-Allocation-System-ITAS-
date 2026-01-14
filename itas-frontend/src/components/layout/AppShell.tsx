@@ -69,7 +69,7 @@ export default function AppShell({ nav }: { nav: NavItem[] }) {
         <div className="sidebar-footer">
           <div className="user-card">
             <div className="avatar">{getInitials(name)}</div>
-            <div>
+            <div className="user-info">
               <div className="user-name">{name}</div>
               <div className="user-role">{roleLabel}</div>
             </div>
