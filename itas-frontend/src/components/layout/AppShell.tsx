@@ -41,14 +41,26 @@ export default function AppShell({ nav }: { nav: NavItem[] }) {
       </div>
 
       <aside className={`sidebar ${isMobileMenuOpen ? "is-open" : ""}`}>
-        <div className="brand">
-          <div className="brand-mark">
-            <img className="brand-logo" src={logo} alt="ITAS logo" />
+        <div className="flex items-center justify-between mb-6 lg:mb-0">
+          <div className="brand">
+            <div className="brand-mark">
+              <img className="brand-logo" src={logo} alt="ITAS logo" />
+            </div>
+            <div className="status-pill">
+              <span className="status-dot" />
+              Live insights
+            </div>
           </div>
-          <div className="status-pill">
-            <span className="status-dot" />
-            Live insights
-          </div>
+          {/* Mobile Close Button */}
+          <button
+            className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
         <div className="nav-section">Workspace</div>
