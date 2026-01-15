@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import TagInput from "../../components/common/TagInput";
 import { api } from "../../api/client";
 import { uploadTaskDocument, assignTask } from "../../api/tasks";
-import { fetchProjects } from "../../api/projects";
+import { fetchProjects, type Project } from "../../api/projects";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 
@@ -309,7 +309,7 @@ export default function TaskCreate() {
                 onChange={(e) => setProjectId(e.target.value)}
               >
                 <option value="">No Project (Uncategorized)</option>
-                {projects.map(p => (
+                {projects.map((p: Project) => (
                   <option key={p.id} value={p.id}>{p.title}</option>
                 ))}
               </select>

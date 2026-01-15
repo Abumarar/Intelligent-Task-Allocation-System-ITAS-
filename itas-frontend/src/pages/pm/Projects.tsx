@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/hooks";
-import { fetchProjects, createProject } from "../../api/projects";
+import { fetchProjects, createProject, type Project } from "../../api/projects";
 
 
 export default function Projects() {
@@ -107,7 +107,7 @@ export default function Projects() {
                         )}
                     </div>
                 ) : (
-                    projectList.map(project => (
+                    projectList.map((project: Project) => (
                         <Link
                             key={project.id}
                             to={`/pm/projects/${project.id}`}
