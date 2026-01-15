@@ -8,6 +8,7 @@ import Login from "./pages/Login.tsx";
 import PMDashboard from "./pages/pm/Dashboard.tsx";
 import TaskCreate from "./pages/pm/TaskCreate.tsx";
 import Employees from "./pages/pm/Employees.tsx";
+import Projects from "./pages/pm/Projects.tsx";
 import Tasks from "./pages/pm/Tasks.tsx";
 import MyProfile from "./pages/employee/MyProfile.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -17,7 +18,7 @@ import AppShell, { type NavItem } from "./components/layout/AppShell";
 const queryClient = new QueryClient();
 const pmNav: NavItem[] = [
   { label: "Dashboard", to: "/pm/dashboard", meta: "Pulse" },
-  { label: "Tasks", to: "/pm/tasks", meta: "Manage" },
+  { label: "Projects", to: "/pm/projects", meta: "Manage" },
   { label: "Employees", to: "/pm/employees", meta: "Skills" },
   { label: "Settings", to: "/pm/settings", meta: "Config" },
 ];
@@ -60,7 +61,9 @@ export default function App() {
                 }
               >
                 <Route path="/pm/dashboard" element={<PMDashboard />} />
-                <Route path="/pm/tasks" element={<Tasks />} />
+                <Route path="/pm/projects" element={<Projects />} />
+                <Route path="/pm/projects/:projectId" element={<Tasks />} />
+                <Route path="/pm/tasks" element={<Tasks />} /> {/* Keep for backward compat or global view if needed */}
                 <Route path="/pm/employees" element={<Employees />} />
                 <Route path="/pm/tasks/new" element={<TaskCreate />} />
                 <Route path="/pm/settings" element={<Settings />} />

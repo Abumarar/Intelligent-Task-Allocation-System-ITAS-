@@ -2,7 +2,9 @@ import { useState, type FormEvent } from "react";
 import TagInput from "../../components/common/TagInput";
 import { api } from "../../api/client";
 import { uploadTaskDocument, assignTask } from "../../api/tasks";
-import { useQueryClient } from "@tanstack/react-query";
+import { fetchProjects } from "../../api/projects";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 
 type Match = {
   employee_id: string;
@@ -15,12 +17,24 @@ type Match = {
 
 export default function TaskCreate() {
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const initialProjectId = location.state?.projectId || "";
+
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+  const [projectId, setProjectId] = useState(initialProjectId);
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
+
+  // Fetch projects for dropdown
+  const { data: projectsData } = useQuery({
+    queryKey: ["projects"],
+    queryFn: fetchProjects
+  });
+
+  const projects = projectsData || [];
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [msg, setMsg] = useState<{ text: string; tone: "success" | "error" } | null>(null);
@@ -88,6 +102,7 @@ export default function TaskCreate() {
         requiredSkills: skills,
         start_date: startDate || undefined,
         due_date: dueDate || undefined,
+        project_id: projectId || undefined,
       });
 
       // Capture matches if returned
@@ -281,6 +296,23 @@ export default function TaskCreate() {
                 onChange={(e) => setDesc(e.target.value)}
                 placeholder="Include scope, dependencies, and desired deliverables."
               />
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="project">
+                Project
+              </label>
+              <select
+                id="project"
+                className="select"
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+              >
+                <option value="">No Project (Uncategorized)</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
             </div>
           </section>
 

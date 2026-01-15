@@ -13,10 +13,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 
-from core.models import Employee, Task, TaskAssignment, Skill, CV
+from core.models import Employee, Task, TaskAssignment, Skill, CV, Project
 from core.serializers import (
     UserSerializer, EmployeeSerializer, TaskSerializer,
-    TaskMatchSerializer, TaskAssignmentSerializer, DashboardStatsSerializer
+    TaskMatchSerializer, TaskAssignmentSerializer, DashboardStatsSerializer, ProjectSerializer
 )
 from core.authentication import generate_jwt_token
 from core.services.cv_parser import CVParser
@@ -499,6 +499,37 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             "tasks": tasks_data,
             "workload": employee.current_workload
         })
+
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    """Project endpoints."""
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+
+    def get_queryset(self):
+        """Filter projects based on user role."""
+        user = self.request.user
+        queryset = Project.objects.all()
+
+        if user.role == "PM":
+            # PMs see only their projects
+            queryset = queryset.filter(manager=user)
+        else:
+            # Employees - what should they see? All active projects? 
+            # Or projects they have tasks in?
+            # For now, let's say Employees see active projects to know what's going on.
+            if self.action == 'list':
+                queryset = queryset.filter(status='ACTIVE')
+            else:
+                # Can only see details, not edit
+                pass
+        
+        return queryset
+
+    def perform_create(self, serializer):
+        """Create project with current user as manager."""
+        serializer.save(manager=self.request.user)
 
 
 class TaskViewSet(viewsets.ModelViewSet):

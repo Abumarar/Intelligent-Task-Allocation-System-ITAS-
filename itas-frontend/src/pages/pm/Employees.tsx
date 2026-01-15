@@ -160,20 +160,27 @@ export default function Employees() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    // Removed confirm() to prevent blocking automated testing
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
-    setDeletingId(id);
+  const handleDeleteClick = (employee: Employee) => {
+    setConfirmDelete({ id: employee.id, name: employee.name });
+  };
+
+  const executeDelete = async () => {
+    if (!confirmDelete) return;
+
+    setDeletingId(confirmDelete.id);
     setMsg(null);
     try {
       const { deleteEmployee } = await import("../../api/employees");
-      await deleteEmployee(id);
+      await deleteEmployee(confirmDelete.id);
       await qc.invalidateQueries({ queryKey: ["employees"] });
-      setMsg({ text: `Removed ${name}.`, tone: "success" });
+      setMsg({ text: `Removed ${confirmDelete.name}.`, tone: "success" });
     } catch {
       setMsg({ text: "Failed to delete employee.", tone: "error" });
     } finally {
       setDeletingId(null);
+      setConfirmDelete(null);
     }
   };
 
@@ -482,7 +489,7 @@ export default function Employees() {
                 </button>
                 <button
                   className="btn btn-ghost btn-danger btn-sm"
-                  onClick={() => handleDelete(employee.id, employee.name)}
+                  onClick={() => handleDeleteClick(employee)}
                   disabled={deletingId === employee.id}
                   title="Delete Employee"
                 >
@@ -533,6 +540,32 @@ export default function Employees() {
 
             <div className="mt-6 flex justify-end">
               <button className="btn btn-primary" onClick={() => setViewingTasksEmployee(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="modal-overlay">
+          <div className="modal card" style={{ maxWidth: '400px' }}>
+            <h3 className="text-lg font-bold">Confirm Deletion</h3>
+            <p className="mt-2 text-slate-600">
+              Are you sure you want to remove <strong>{confirmDelete.name}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setConfirmDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                onClick={executeDelete}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

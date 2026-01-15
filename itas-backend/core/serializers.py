@@ -3,7 +3,7 @@ Serializers for API responses
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from core.models import Employee, Task, TaskAssignment, Skill, CV
+from core.models import Employee, Task, TaskAssignment, Skill, CV, Project
 
 User = get_user_model()
 
@@ -106,9 +106,30 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ProjectSerializer(serializers.ModelSerializer):
+    """Serializer for projects."""
+    manager_name = serializers.CharField(source='manager.get_full_name', read_only=True)
+    task_count = serializers.SerializerMethodField()
+    completed_task_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = ['id', 'title', 'description', 'manager', 'manager_name', 'status', 'created_at', 'updated_at', 'task_count', 'completed_task_count']
+        read_only_fields = ['id', 'manager', 'created_at', 'updated_at']
+
+    def get_task_count(self, obj):
+        return obj.tasks.count()
+
+    def get_completed_task_count(self, obj):
+        return obj.tasks.filter(status='COMPLETED').count()
+
+
 class TaskSkillSerializer(serializers.Serializer):
     """Serializer for task skills."""
     skill_name = serializers.CharField(max_length=100)
+
+
+
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -117,6 +138,8 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     assigned_to = serializers.SerializerMethodField()
     assigned_to_name = serializers.SerializerMethodField()
+    project_id = serializers.PrimaryKeyRelatedField(source='project', queryset=Project.objects.all(), allow_null=True, required=False)
+    project_title = serializers.CharField(source='project.title', read_only=True)
     
     class Meta:
         model = Task
@@ -124,7 +147,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'priority', 'status', 
             'requiredSkills', 'created_by', 'created_by_name',
             'created_at', 'updated_at', 'start_date', 'due_date',
-            'assigned_to', 'assigned_to_name'
+            'assigned_to', 'assigned_to_name', 'project_id', 'project_title'
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
     

@@ -1,6 +1,5 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { fetchTasks, updateTask, assignTask, type Task } from "../../api/tasks";
 import { fetchEmployees } from "../../api/employees";
 
@@ -16,10 +15,11 @@ const COLUMNS: { id: string; title: string; statuses: TaskStatus[]; color: strin
 ];
 
 export default function Tasks() {
+    const { projectId } = useParams<{ projectId: string }>();
     const queryClient = useQueryClient();
 
     // Fetch tasks
-    const { data: tasks, isLoading: isLoadingTasks } = useQuery({
+    const { data: tasksData, isLoading: isLoadingTasks } = useQuery({
         queryKey: ["tasks"],
         queryFn: () => fetchTasks(),
     });
@@ -32,12 +32,19 @@ export default function Tasks() {
 
     const employees = employeesData || [];
 
+    // Filter tasks by project if a projectId is present
+    const tasks = tasksData ? (projectId
+        ? tasksData.filter((t: any) => String(t.project_id) === projectId)
+        : tasksData
+    ) : [];
+
     // Update Task Mutation
     const updateTaskMutation = useMutation({
         mutationFn: ({ id, data }: { id: string; data: Partial<Task> }) => updateTask(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
         },
     });
 
@@ -72,7 +79,7 @@ export default function Tasks() {
     const getTasksByColumn = (columnId: string) => {
         const column = COLUMNS.find(c => c.id === columnId);
         if (!column) return [];
-        return tasks?.filter(t => column.statuses.includes(t.status as TaskStatus)) || [];
+        return tasks.filter(t => column.statuses.includes(t.status as TaskStatus));
     };
 
     if (isLoadingTasks) {
@@ -92,12 +99,15 @@ export default function Tasks() {
             <div className="page-hero mb-8">
                 <div>
                     <div className="eyebrow text-indigo-600 font-bold tracking-wider mb-2">PROJECT MANAGEMENT</div>
-                    <h1 className="page-title text-slate-900">Task Board</h1>
+                    <h1 className="page-title text-slate-900">
+                        {projectId ? "Project Tasks" : "Task Board"}
+                    </h1>
                     <p className="lead mt-2">Manage assignments and track progress across your team.</p>
                 </div>
 
                 <Link
                     to="/pm/tasks/new"
+                    state={{ projectId }} // Pass projectId to create page
                     className="group flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 hover:shadow-indigo-600/35 hover:-translate-y-0.5 transition-all duration-200"
                 >
                     <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,6 +116,17 @@ export default function Tasks() {
                     <span>New Task</span>
                 </Link>
             </div>
+
+            {projectId && (
+                <div className="mb-6 flex items-center gap-2 text-sm text-slate-500">
+                    <Link to="/pm/projects" className="hover:text-indigo-600 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to Projects
+                    </Link>
+                </div>
+            )}
 
             {/* Kanban Board */}
             <div className="kanban-board">
@@ -195,7 +216,7 @@ export default function Tasks() {
                                                 </div>
 
                                                 {/* Assignee Selector */}
-                                                <div className="relative flex-1 max-w-[140px]">
+                                                <div className="relative flex-1 max-w-[200px]">
                                                     <select
                                                         className={`appearance-none w-full pl-7 pr-6 py-1 border rounded-lg text-xs font-semibold cursor-pointer outline-none transition-all ${task.assigned_to
                                                             ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
@@ -206,7 +227,9 @@ export default function Tasks() {
                                                     >
                                                         <option value="" disabled>Assign...</option>
                                                         {employees.map((emp) => (
-                                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                                            <option key={emp.id} value={emp.id}>
+                                                                {emp.name} {emp.title ? `(${emp.title})` : ""}
+                                                            </option>
                                                         ))}
                                                     </select>
 

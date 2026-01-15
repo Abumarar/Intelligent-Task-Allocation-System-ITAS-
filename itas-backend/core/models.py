@@ -77,6 +77,7 @@ class CV(models.Model):
         return f"CV for {self.employee.name} - {self.status}"
 
 
+
 class Skill(models.Model):
     """Skills extracted from CVs or manually added."""
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
@@ -95,6 +96,26 @@ class Skill(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.name}"
+
+
+class Project(models.Model):
+    """A collection of tasks managed by a PM."""
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects')
+    status = models.CharField(max_length=20, default='ACTIVE', choices=[
+        ('ACTIVE', 'Active'),
+        ('COMPLETED', 'Completed'),
+        ('ARCHIVED', 'Archived')
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return self.title
 
 
 class Task(models.Model):
@@ -124,6 +145,7 @@ class Task(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     start_date = models.DateTimeField(blank=True, null=True)
     due_date = models.DateTimeField(blank=True, null=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']

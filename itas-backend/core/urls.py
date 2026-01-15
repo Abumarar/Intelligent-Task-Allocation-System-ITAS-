@@ -6,11 +6,12 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from core.views import AuthView, EmployeeViewSet, TaskViewSet, DashboardView, debug_media, debug_email
+from core.views import AuthView, EmployeeViewSet, TaskViewSet, DashboardView, ProjectViewSet, debug_media, debug_email
 
 router = DefaultRouter()
 router.register(r'employees', EmployeeViewSet, basename='employee')
 router.register(r'tasks', TaskViewSet, basename='task')
+router.register(r'projects', ProjectViewSet, basename='project')
 # Note: my-profile endpoint is added via @action decorator in TaskViewSet
 
 @api_view(['GET'])
