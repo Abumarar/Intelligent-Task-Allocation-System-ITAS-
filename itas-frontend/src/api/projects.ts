@@ -15,6 +15,11 @@ export interface Project {
 
 export const fetchProjects = async () => {
     const { data } = await api.get<Project[]>("/projects/");
+    // Safeguard: Ensure we return an array. Using SPA proxy or misconfigured backend might return HTML.
+    if (!Array.isArray(data)) {
+        console.error("Expected array from /projects/, got:", data);
+        return [];
+    }
     return data;
 };
 
