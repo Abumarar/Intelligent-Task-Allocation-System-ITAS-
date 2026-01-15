@@ -32,3 +32,7 @@ export const createProject = async (projectData: Partial<Project>) => {
     const { data } = await api.post<Project>("/projects/", projectData);
     return data;
 };
+
+export const deleteProject = async (projectId: string) => {
+    await api.delete(`/projects/${projectId}/`);
+};
