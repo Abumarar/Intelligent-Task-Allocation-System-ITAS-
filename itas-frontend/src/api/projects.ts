@@ -14,13 +14,18 @@ export interface Project {
 }
 
 export const fetchProjects = async () => {
-    const { data } = await api.get<Project[]>("/projects/");
-    // Safeguard: Ensure we return an array. Using SPA proxy or misconfigured backend might return HTML.
-    if (!Array.isArray(data)) {
-        console.error("Expected array from /projects/, got:", data);
-        return [];
+    const { data } = await api.get<any>("/projects/");
+
+    if (Array.isArray(data)) {
+        return data;
     }
-    return data;
+
+    if (data && typeof data === 'object' && Array.isArray(data.results)) {
+        return data.results;
+    }
+
+    console.error("Expected array or paginated results from /projects/, got:", data);
+    return [];
 };
 
 export const createProject = async (projectData: Partial<Project>) => {
