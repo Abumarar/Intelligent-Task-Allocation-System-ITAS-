@@ -12,6 +12,7 @@ export default function Projects() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ title: "", description: "" });
     const [submitting, setSubmitting] = useState(false);
+    const [msg, setMsg] = useState<{ text: string; tone: "error" | "success" } | null>(null);
 
     // Fetch projects
     const { data: projects, isLoading, error } = useQuery({
@@ -25,13 +26,19 @@ export default function Projects() {
             qc.invalidateQueries({ queryKey: ["projects"] });
             setIsModalOpen(false);
             setFormData({ title: "", description: "" });
+            setMsg(null);
         },
+        onError: (err: any) => {
+            const message = err.response?.data?.detail || err.message || "Failed to create project.";
+            setMsg({ text: message, tone: "error" });
+        }
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.title) return;
         setSubmitting(true);
+        setMsg(null);
         createMutation.mutate(formData, {
             onSettled: () => setSubmitting(false)
         });
@@ -164,6 +171,13 @@ export default function Projects() {
                                     rows={3}
                                 />
                             </div>
+
+                            {msg && (
+                                <div className="alert mb-4" data-tone={msg.tone}>
+                                    {msg.text}
+                                </div>
+                            )}
+
                             <div className="flex justify-end gap-3">
                                 <button
                                     type="button"
