@@ -12,6 +12,7 @@ import Projects from "./pages/pm/Projects.tsx";
 import Tasks from "./pages/pm/Tasks.tsx";
 import MyProfile from "./pages/employee/MyProfile.tsx";
 import Settings from "./pages/Settings.tsx";
+import NotFound from "./pages/NotFound.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import AppShell, { type NavItem } from "./components/layout/AppShell";
 
@@ -79,6 +80,8 @@ export default function App() {
                 <Route path="/employee/profile" element={<MyProfile />} />
                 <Route path="/employee/settings" element={<Settings />} />
               </Route>
+
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>
