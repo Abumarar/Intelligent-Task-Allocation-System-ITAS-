@@ -22,6 +22,7 @@ from core.authentication import generate_jwt_token
 from core.services.cv_parser import CVParser
 from core.services.skill_extractor import SkillExtractor
 from core.services.matching_engine import MatchingEngine
+from core.services.audit_service import AuditService
 
 User = get_user_model()
 
@@ -138,6 +139,45 @@ class AuthView(APIView):
 
         return Response({"user": user_data, "message": "Profile updated successfully"})
 
+        return Response({"user": user_data, "message": "Profile updated successfully"})
+
+
+class ReportsView(APIView):
+    """View for generating system reports."""
+    
+    def get(self, request):
+        if request.user.role != "PM":
+             return Response(
+                {"message": "Only Project Managers can view reports"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # 1. Task Allocation Stats
+        total_tasks = Task.objects.count()
+        completed = Task.objects.filter(status='COMPLETED').count()
+        assigned = Task.objects.filter(status='ASSIGNED').count()
+        
+        # 2. Workload Distribution
+        employees = Employee.objects.all()
+        workload_data = [
+            {"name": e.name, "workload": e.current_workload, "title": e.title}
+             for e in employees
+        ]
+        
+        # 3. Assignment History (last 30 days)
+        last_30_days = timezone.now() - timezone.timedelta(days=30)
+        assignments = TaskAssignment.objects.filter(assigned_at__gte=last_30_days).count()
+        
+        return Response({
+            "task_stats": {
+                "total": total_tasks,
+                "completed": completed,
+                "assigned": assigned,
+                "completion_rate": round((completed / total_tasks * 100) if total_tasks else 0, 1)
+            },
+            "workload_distribution": workload_data,
+            "recent_assignments": assignments
+        })
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     """Employee endpoints."""
@@ -227,6 +267,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                         )
 
                 serializer = self.get_serializer(employee)
+                AuditService.log(request.user, "CREATE", employee, f"Created employee {email}")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -242,6 +283,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         user = instance.user
         instance.delete()
+        AuditService.log(self.request.user, "DELETE", instance, f"Deleted employee {user.email}")
         user.delete()
 
     @action(detail=False, methods=["post"], url_path="analyze")
@@ -562,6 +604,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         
+        AuditService.log(request.user, "CREATE", serializer.instance, "Created task")
+        
         # Get the created task instance
         task = serializer.instance
         
@@ -694,6 +738,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             task.status = "ASSIGNED"
             task.save()
 
+        AuditService.log(request.user, "ASSIGN", task, f"Assigned to {employee.name} with score {score}")
+
         serializer = TaskAssignmentSerializer(assignment)
         return Response(serializer.data)
 
@@ -715,7 +761,55 @@ class TaskViewSet(viewsets.ModelViewSet):
             task.status = "UNASSIGNED"
             task.save()
             
+            task.status = "UNASSIGNED"
+            task.save()
+            
+        AuditService.log(request.user, "UPDATE", task, "Unassigned task")
+            
         return Response({"message": "Task unassigned successfully"})
+        
+    @action(detail=True, methods=["post"], url_path="progress")
+    def update_progress(self, request, pk=None):
+        """Update task progress (Status and Notes) for Employee."""
+        task = self.get_object()
+        user = request.user
+        
+        # Find assignment for this user
+        try:
+            employee = user.employee_profile
+            assignment = TaskAssignment.objects.get(task=task, employee=employee)
+        except (AttributeError, TaskAssignment.DoesNotExist):
+             return Response(
+                {"message": "You are not assigned to this task"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        new_status = request.data.get("status")
+        notes = request.data.get("notes")
+        
+        if new_status:
+            # Update assignment status
+            assignment.status = new_status
+            
+            # Sync to Task status if needed (simplified logic)
+            if new_status == "COMPLETED":
+                task.status = "COMPLETED"
+                assignment.completed_at = timezone.now()
+            elif new_status == "IN_PROGRESS":
+                task.status = "IN_PROGRESS"
+                if not assignment.started_at:
+                    assignment.started_at = timezone.now()
+            
+            task.save()
+            
+        if notes is not None:
+            assignment.notes = notes
+            
+        assignment.save()
+        
+        AuditService.log(user, "UPDATE", task, f"Updated progress: {new_status}")
+        
+        return Response({"message": "Progress updated"})
 
 
 class DashboardView(APIView):

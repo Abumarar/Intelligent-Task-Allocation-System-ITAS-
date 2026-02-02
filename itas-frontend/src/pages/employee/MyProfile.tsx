@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../../auth/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMyProfile } from "../../api/profile";
-import { uploadEmployeeCV } from "../../api/employees";
+import { uploadEmployeeCV, updateEmployee } from "../../api/employees";
+import { updateTaskProgress, type TaskStatus } from "../../api/tasks";
 
 
 
@@ -11,6 +12,16 @@ export default function MyProfile() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Edit Profile State
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+
+  // Task Progress State
+  const [selectedTask, setSelectedTask] = useState<{ id: string, title: string, status: string, notes?: string } | null>(null);
+  const [taskStatus, setTaskStatus] = useState<TaskStatus>("IN_PROGRESS");
+  const [taskNotes, setTaskNotes] = useState("");
 
   const { data: profileData, isLoading, error } = useQuery({
     queryKey: ["my-profile"],
@@ -34,6 +45,44 @@ export default function MyProfile() {
     } finally {
       setUploading(false);
       e.target.value = ""; // Reset input
+    }
+  };
+
+  const openEditProfile = () => {
+    if (profileData?.employee) {
+      setEditName(profileData.employee.name);
+      setEditTitle(profileData.employee.title || "");
+      setIsEditProfileOpen(true);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!profileData?.employee?.id) return;
+    try {
+      await updateEmployee(profileData.employee.id, { name: editName, title: editTitle });
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+      setIsEditProfileOpen(false);
+    } catch (err) {
+      console.error("Failed to update profile", err);
+      alert("Failed to update profile");
+    }
+  };
+
+  const openTaskUpdate = (task: any) => {
+    setSelectedTask(task);
+    setTaskStatus(task.status);
+    setTaskNotes(task.notes || "");
+  };
+
+  const handleUpdateTask = async () => {
+    if (!selectedTask) return;
+    try {
+      await updateTaskProgress(selectedTask.id, taskStatus, taskNotes);
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+      setSelectedTask(null);
+    } catch (err) {
+      console.error("Failed to update task", err);
+      alert("Failed to update task progress");
     }
   };
 
@@ -77,6 +126,13 @@ export default function MyProfile() {
               <div className="profile-name">{user?.name || "Employee"}</div>
               <div className="profile-role">Individual Contributor</div>
             </div>
+            <div>
+              <div className="profile-name">{user?.name || "Employee"}</div>
+              <div className="profile-role">{profileData?.employee?.title || "Individual Contributor"}</div>
+            </div>
+            <button className="btn btn-sm btn-outline ml-auto" onClick={openEditProfile}>
+              Edit
+            </button>
           </div>
           <div className="profile-meta">
             <div>
@@ -137,7 +193,9 @@ export default function MyProfile() {
                       {task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : "No due date"}
                     </div>
                   </div>
-                  <span className="badge status-processing">{task.status}</span>
+                  <span className="badge status-processing cursor-pointer hover:bg-opacity-80" onClick={() => openTaskUpdate(task)}>
+                    {task.status}
+                  </span>
                 </div>
               ))
             ) : (
@@ -188,6 +246,76 @@ export default function MyProfile() {
           </div>
         </section>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditProfileOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Edit Profile</h3>
+            <div className="py-4 space-y-4">
+              <div className="form-control">
+                <label className="label">Name</label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">Title</label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="modal-action">
+              <button className="btn" onClick={() => setIsEditProfileOpen(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleUpdateProfile}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Update Modal */}
+      {selectedTask && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Update Progress: {selectedTask.title}</h3>
+            <div className="py-4 space-y-4">
+              <div className="form-control">
+                <label className="label">Status</label>
+                <select
+                  className="select select-bordered w-full"
+                  value={taskStatus}
+                  onChange={(e) => setTaskStatus(e.target.value as any)}
+                >
+                  <option value="ASSIGNED">Assigned</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="BLOCKED">Blocked</option>
+                  <option value="COMPLETED">Completed</option>
+                </select>
+              </div>
+              <div className="form-control">
+                <label className="label">Notes</label>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  placeholder="Add progress notes..."
+                  value={taskNotes}
+                  onChange={(e) => setTaskNotes(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="modal-action">
+              <button className="btn" onClick={() => setSelectedTask(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleUpdateTask}>Update</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

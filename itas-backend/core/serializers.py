@@ -203,7 +203,7 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'task', 'task_title', 'employee', 'employee_name',
             'suitability_score', 'status', 'assigned_at', 
-            'started_at', 'completed_at'
+            'started_at', 'completed_at', 'notes'
         ]
         read_only_fields = ['id', 'assigned_at']
 

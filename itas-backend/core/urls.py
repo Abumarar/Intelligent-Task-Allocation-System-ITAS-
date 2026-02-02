@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from core.views import AuthView, EmployeeViewSet, TaskViewSet, DashboardView, ProjectViewSet, debug_media, debug_email
+from core.views import AuthView, EmployeeViewSet, TaskViewSet, DashboardView, ProjectViewSet, ReportsView, debug_media, debug_email
 
 router = DefaultRouter()
 router.register(r'employees', EmployeeViewSet, basename='employee')
@@ -38,5 +38,6 @@ urlpatterns = [
     path('dashboard/stats', DashboardView.as_view(), name='dashboard-stats'),
     path('debug-media', debug_media, name='debug-media'),
     path('debug-email', debug_email, name='debug-email'),
+    path('reports', ReportsView.as_view(), name='reports'),
     path('', include(router.urls)),
 ]

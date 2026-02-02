@@ -158,3 +158,8 @@ export async function uploadTaskDocument(file: File) {
     });
     return res.data;
 }
+
+export async function updateTaskProgress(taskId: string, status?: TaskStatus, notes?: string) {
+    const res = await api.post(withSlash(`/tasks/${taskId}/progress`), { status, notes });
+    return res.data;
+}

@@ -190,6 +190,7 @@ class TaskAssignment(models.Model):
     assigned_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True, help_text="Employee progress notes")
 
     class Meta:
         unique_together = ['task', 'employee']
@@ -197,3 +198,29 @@ class TaskAssignment(models.Model):
 
     def __str__(self):
         return f"{self.task.title} -> {self.employee.name} ({self.suitability_score:.1f}%)"
+
+
+class AuditLog(models.Model):
+    """Log of critical system actions."""
+    ACTION_CHOICES = [
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+        ('DELETE', 'Delete'),
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+        ('ASSIGN', 'Assign'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    target_model = models.CharField(max_length=50, help_text="e.g., Task, Employee")
+    target_id = models.CharField(max_length=50, blank=True, null=True)
+    details = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.timestamp} - {self.user} - {self.action} {self.target_model}"
