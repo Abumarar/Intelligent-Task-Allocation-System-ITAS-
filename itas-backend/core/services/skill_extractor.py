@@ -3,13 +3,12 @@ Skill Extraction Service using curated patterns and section heuristics.
 Extracts technical skills from CV text using fast NLP-lite techniques.
 """
 import re
-from typing import List
-
+from typing import List, Dict, Set, Optional, Pattern, Any
 
 class SkillExtractor:
     """Service for extracting skills from CV text using NLP-lite heuristics."""
 
-    TECHNICAL_SKILLS = {
+    TECHNICAL_SKILLS: Set[str] = {
         # Programming Languages
         'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'c', 'go', 'rust', 'kotlin',
         'swift', 'php', 'ruby', 'scala', 'r', 'matlab', 'perl', 'shell', 'bash', 'powershell',
@@ -54,7 +53,7 @@ class SkillExtractor:
         'mentoring', 'etl', 'data engineering',
     }
 
-    SKILL_ALIASES = {
+    SKILL_ALIASES: Dict[str, str] = {
         "nodejs": "node.js",
         "node js": "node.js",
         "reactjs": "react",
@@ -96,7 +95,7 @@ class SkillExtractor:
         "py": "python",
     }
 
-    DISPLAY_NAMES = {
+    DISPLAY_NAMES: Dict[str, str] = {
         "javascript": "JavaScript",
         "typescript": "TypeScript",
         "node.js": "Node.js",
@@ -134,26 +133,35 @@ class SkillExtractor:
         "bitbucket": "Bitbucket",
     }
 
-    ACRONYMS = {
+    ACRONYMS: Set[str] = {
         "api", "rest", "sql", "nlp", "ui", "ux", "qa", "aws", "gcp", "tdd", "bdd"
     }
+    
+    # Class-level cache for compiled regex
+    _skills_pattern: Optional[Pattern] = None
+    _known_skill_keys: Optional[Set[str]] = None
 
     def __init__(self):
-        self.known_skill_keys = set(self.TECHNICAL_SKILLS) | set(self.SKILL_ALIASES.values())
-        self.skills_pattern = self._build_skills_pattern()
+        # Initialize class-level attributes if not done yet
+        if SkillExtractor._known_skill_keys is None:
+             SkillExtractor._known_skill_keys = set(self.TECHNICAL_SKILLS) | set(self.SKILL_ALIASES.values())
+        
+        if SkillExtractor._skills_pattern is None:
+            SkillExtractor._skills_pattern = self._build_skills_pattern()
     
-    def _build_skills_pattern(self) -> re.Pattern:
+    @classmethod
+    def _build_skills_pattern(cls) -> Pattern:
         """Build regex pattern for skill matching."""
         # Create pattern that matches skills (case-insensitive, custom boundaries)
         skills_list = sorted(
-            self.TECHNICAL_SKILLS | set(self.SKILL_ALIASES.keys()),
+            cls.TECHNICAL_SKILLS | set(cls.SKILL_ALIASES.keys()),
             key=len,
             reverse=True
         )
         pattern = r'(?<!\w)(' + '|'.join(re.escape(skill) for skill in skills_list) + r')(?!\w)'
         return re.compile(pattern, re.IGNORECASE)
     
-    def extract_skills(self, text: str, min_confidence: float = 0.3) -> List[dict]:
+    def extract_skills(self, text: str, min_confidence: float = 0.3) -> List[Dict[str, Any]]:
         """
         Extract skills from CV text.
         
@@ -168,10 +176,10 @@ class SkillExtractor:
             return []
         
         text_lower = text.lower()
-        found_skills = {}
+        found_skills: Dict[str, Dict[str, Any]] = {}
 
         # Method 1: Direct pattern matching
-        matches = self.skills_pattern.findall(text_lower)
+        matches = self._skills_pattern.findall(text_lower)
         for match in matches:
             skill_key = self.normalize_skill_key(match)
             if not skill_key:
@@ -190,7 +198,11 @@ class SkillExtractor:
             skill_key = self.normalize_skill_key(skill)
             if not skill_key:
                 continue
-            base_confidence = 0.9 if skill_key in self.known_skill_keys else 0.55
+            
+            # Check if it's a known skill to assign confidence
+            is_known = skill_key in self._known_skill_keys
+            base_confidence = 0.9 if is_known else 0.55
+            
             if skill_key not in found_skills:
                 found_skills[skill_key] = {
                     'name': self.normalize_skill_name(skill_key),
@@ -322,6 +334,13 @@ class SkillExtractor:
         key = re.sub(r"[_]+", " ", key)
         key = re.sub(r"\s+", " ", key).strip()
         key = key.replace(" / ", "/")
+        
+        # Handle cases like "python3" -> "python"
+        if key not in self._known_skill_keys:
+             # Try stripping version numbers if the skill isn't known
+             key_no_version = re.sub(r"\d+(\.\d+)*$", "", key).strip()
+             if key_no_version in self._known_skill_keys:
+                 key = key_no_version
 
         return self.SKILL_ALIASES.get(key, key)
 

@@ -2,8 +2,10 @@
 Matching Engine for Task-Employee Suitability Scoring
 Calculates how well an employee matches task requirements based on skills, workload, and other factors.
 """
-from typing import List, Dict
+from typing import List, Dict, Optional, Any
 import re
+from django.db.models import Count, Q, F, Value, Case, When
+from django.db.models.functions import Lower
 from core.models import Employee, Task
 from core.services.skill_extractor import SkillExtractor
 
@@ -205,7 +207,7 @@ class MatchingEngine:
         bounded = max(0.0, min(1.0, confidence))
         return base + (1.0 - base) * bounded
 
-    def _get_weights(self, priority: str) -> Dict[str, float]:
+    def _get_weights(self, priority: Optional[str]) -> Dict[str, float]:
         if not priority:
             return self.weights_by_priority["MEDIUM"]
 
@@ -216,9 +218,10 @@ class MatchingEngine:
         task: Task,
         limit: int = 10,
         min_score: float = 50.0
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """
         Find best matching employees for a task.
+        Uses efficient DB pre-filtering to minimize python-side processing.
 
         Args:
             task: Task instance
@@ -232,10 +235,60 @@ class MatchingEngine:
         normalized_required = self._normalize_required_skills(required_skills)
         weights = self._get_weights(task.priority)
 
-        employees = Employee.objects.select_related("user").prefetch_related("skill_set")
+        # 1. Base Query with optimization
+        # Use annotated workload to filter overloaded employees at DB level
+        # Assuming max capacity of 5 tasks = 100% workload
+        MAX_CAPACITY = 5
+        
+        employees_query = Employee.objects.select_related("user").prefetch_related("skill_set")
+        
+        # Annotate with active task count
+        employees_query = employees_query.annotate(
+            active_task_count=Count(
+                'taskassignment_set',
+                filter=Q(taskassignment_set__status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED'])
+            )
+        )
+        
+        # Filter 1: Exclude fully booked employees (Active tasks < MAX_CAPACITY)
+        employees_query = employees_query.filter(active_task_count__lt=MAX_CAPACITY)
+        
+        # Filter 2: Pre-filter by skills if any are required
+        # This is fuzzy matching limited by SQL capabilities, but significantly reduces candidate pool
+        if normalized_required:
+            # Create a Q object for OR condition on skill names (case-insensitive)
+            # We match if the employee has ANY of the required skills
+            skill_filter = Q()
+            for skill in normalized_required:
+                skill_filter |= Q(skill_set__name__icontains=skill)
+            
+            # Also include employees with relevant titles as a fallback heuristic
+            # e.g. if looking for "React", a "Frontend Developer" might be relevant even if skill list is empty
+            if "frontend" in " ".join(normalized_required).lower():
+                 skill_filter |= Q(title__icontains="frontend")
+            if "backend" in " ".join(normalized_required).lower():
+                 skill_filter |= Q(title__icontains="backend")
+
+            # Apply filter (distinct is needed because one employee might match multiple skills)
+            employees_query = employees_query.filter(skill_filter).distinct()
+
+        # Execute query
+        candidates = list(employees_query)
+        
+        if not candidates and normalized_required:
+             print("MATCHING_ENGINE: Strict skill filtering yielded 0 candidates. Falling back to workload-only filtering.")
+             # Fallback: Just filter by workload if skill match was too strict or data is dirty
+             employees_query = Employee.objects.select_related("user").prefetch_related("skill_set")
+             employees_query = employees_query.annotate(
+                active_task_count=Count(
+                    'taskassignment_set',
+                    filter=Q(taskassignment_set__status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED'])
+                )
+             ).filter(active_task_count__lt=MAX_CAPACITY)
+             candidates = list(employees_query)
 
         matches = []
-        for employee in employees:
+        for employee in candidates:
             skill_profile = self._build_skill_profile(employee)
             score = self._calculate_total_score(
                 employee,
