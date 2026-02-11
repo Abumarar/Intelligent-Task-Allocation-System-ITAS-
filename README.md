@@ -51,9 +51,9 @@ ITAS is a web-based system designed to optimize software development task alloca
 ## Team Members
 | Name | Role |
 |------|------|
-| محمد اسامه محمد ابو مرار | Frontend Specialist (Dashboard & UI) |
-| همام محمد خير موسى العمري | Backend & Database Architect |
-| احمد وائل حسين ابو شريحه | AI & NLP Specialist |
+| همام محمد خير موسى العمري | Frontend Specialist (Dashboard & UI) |
+| احمد وائل حسين ابو شريحه  | Backend & Database Architect |
+| محمد اسامه محمد ابو مرار | AI & NLP Specialist |
 
 ## References
 - Jira Smart Assignment and Automation Tools  
