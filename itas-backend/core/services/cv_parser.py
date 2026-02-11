@@ -144,51 +144,75 @@ class CVParser:
                 print(f"CV_PARSER_DEBUG: Regex found Name: {details['name']}, Role: {details['role']}")
                 return details
 
-            # 2. Extract Name (Person) via spaCy (Fallback)
-            # Strategy: First PERSON entity found in the first 1000 characters
-            nlp = spacy.load("en_core_web_sm")
-            doc = nlp(text)
+            # 2. Extract Name (Person)
+            # Strategy: 
+            # (A) Check the very first line. If it looks like a name (Title Case, 2+ words), use it.
+            # This is common in CVs where the name is the header.
+            lines = [l.strip() for l in text.split('\n') if l.strip()]
+            if lines:
+                first_line = lines[0]
+                # Basic validation: 2-4 words, mostly letters, Title Case check not strict to allow CAPS
+                if 2 <= len(first_line.split()) <= 4 and re.match(r"^[A-Za-z\s\.\-]+$", first_line):
+                     # Check against common non-name headers just in case
+                     if first_line.upper() not in ["RESUME", "CURRICULUM VITAE", "CV", "PROFILE", "SUMMARY"]:
+                         details["name"] = first_line.title()
 
+            # (B) If first line didn't work, try spaCy on the first chunk
             if not details["name"]:
+                nlp = spacy.load("en_core_web_sm")
                 first_chunk = text[:1000]
                 chunk_doc = nlp(first_chunk)
                 
                 for ent in chunk_doc.ents:
                     if ent.label_ == "PERSON":
                         clean_name = ent.text.strip().title()
-                        # Basic filter: 2+ words, no weird symbols, and ignore "Name" keyword if caught
+                        # Improve filter: 
+                        # - 2+ words
+                        # - No weird symbols
+                        # - Blocklist common Tech terms that spacy mistakes for names
+                        blocklist = ["Asp.Net", "Asp.Net Core", "React", "Node.Js", "Java", "Python", "Html", "Css", "Sql", "Git"]
+                        
                         if (len(clean_name.split()) >= 2 and 
                             re.match(r"^[A-Za-z\s\.\-]+$", clean_name) and 
-                            clean_name.lower() != "name"):
+                            clean_name.lower() != "name" and
+                            clean_name not in blocklist):
                             details["name"] = clean_name
                             break
             
-            # 2. Extract Role
-            # Strategy: Look for common job titles
-            roles_db = [
-                "Software Engineer", "Java Developer", "Python Developer", "Full Stack Developer",
-                "Frontend Developer", "Backend Developer", "DevOps Engineer", "Data Scientist",
-                "Project Manager", "Business Analyst", "Product Manager", "QA Engineer",
-                "UI/UX Designer", "Scrum Master", "System Administrator", "Database Administrator"
-            ]
-            
-            # Regex for flexibility (e.g., "Senior Java Developer")
-            for role in roles_db:
-                pattern = re.compile(rf"\b({role})\b", re.IGNORECASE)
-                match = pattern.search(first_chunk)
-                if match:
-                    # Capture the full line/phrase if possible, but for now just the matched role
-                    # Or try to capture "Senior" prefix
-                    start, end = match.span()
-                    # Look back for "Senior", "Lead", "Junior"
-                    prefix_match = re.search(r"\b(Senior|Sr\.|Junior|Jr\.|Lead|Principal|Chief)\s+$", first_chunk[:start], re.IGNORECASE)
-                    if prefix_match:
-                        details["role"] = f"{prefix_match.group(1)} {match.group(1)}".title()
-                    else:
-                        details["role"] = match.group(1).title()
-                    break
-                    
-                    break
+            # 3. Extract Role
+            # Strategy: 
+            # (A) Check the second line or lines near the top.
+            # In the user's CV, the second line is "Software engineer | Full stack web development"
+            if lines and len(lines) > 1:
+                second_line = lines[1]
+                # If it contains typical role keywords or separators like "|", it might be the title
+                if "|" in second_line or "Software" in second_line or "Developer" in second_line or "Engineer" in second_line:
+                     details["role"] = second_line.strip()
+
+            # (B) Fallback: Look for common job titles in the first chunk if (A) didn't catch it
+            if not details["role"]:
+                roles_db = [
+                    "Software Engineer", "Java Developer", "Python Developer", "Full Stack Developer",
+                    "Frontend Developer", "Backend Developer", "DevOps Engineer", "Data Scientist",
+                    "Project Manager", "Business Analyst", "Product Manager", "QA Engineer",
+                    "UI/UX Designer", "Scrum Master", "System Administrator", "Database Administrator"
+                ]
+                
+                # Regex for flexibility (e.g., "Senior Java Developer")
+                for role in roles_db:
+                    pattern = re.compile(rf"\b({role})\b", re.IGNORECASE)
+                    match = pattern.search(first_chunk)
+                    if match:
+                        # Capture the full line/phrase if possible, but for now just the matched role
+                        # Or try to capture "Senior" prefix
+                        start, end = match.span()
+                        # Look back for "Senior", "Lead", "Junior"
+                        prefix_match = re.search(r"\b(Senior|Sr\.|Junior|Jr\.|Lead|Principal|Chief)\s+$", first_chunk[:start], re.IGNORECASE)
+                        if prefix_match:
+                            details["role"] = f"{prefix_match.group(1)} {match.group(1)}".title()
+                        else:
+                            details["role"] = match.group(1).title()
+                        break
                     
         except ImportError:
             print("CV_PARSER_ERROR: spaCy not installed or model not found. Skipping detailed extraction.")
