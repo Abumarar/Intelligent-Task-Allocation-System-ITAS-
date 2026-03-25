@@ -260,7 +260,7 @@ class MatchingEngine:
             # We match if the employee has ANY of the required skills
             skill_filter = Q()
             for skill in normalized_required:
-                skill_filter |= Q(skill_set__name__icontains=skill)
+                skill_filter |= Q(skill__name__icontains=skill)
             
             # Also include employees with relevant titles as a fallback heuristic
             # e.g. if looking for "React", a "Frontend Developer" might be relevant even if skill list is empty
@@ -308,6 +308,10 @@ class MatchingEngine:
                         normalized_required,
                         skill_profile
                     ),
+                    "missing_skills": self._get_missing_skills(
+                        normalized_required,
+                        skill_profile
+                    ),
                     "current_workload": employee.current_workload,
                 })
 
@@ -320,10 +324,23 @@ class MatchingEngine:
         required_skills: List[str],
         skill_profile: Dict[str, float]
     ) -> List[str]:
-        """Get list of skills that match between employee and requirements."""
+        """Get list of required skills the employee has (score >= 0.5)."""
         matching = []
         for skill in required_skills:
             if self._match_skill(skill, skill_profile) >= 0.5:
                 matching.append(self.skill_extractor.normalize_skill_name(skill))
 
         return matching
+
+    def _get_missing_skills(
+        self,
+        required_skills: List[str],
+        skill_profile: Dict[str, float]
+    ) -> List[str]:
+        """Get list of required skills the employee is missing (score < 0.5)."""
+        missing = []
+        for skill in required_skills:
+            if self._match_skill(skill, skill_profile) < 0.5:
+                missing.append(self.skill_extractor.normalize_skill_name(skill))
+
+        return missing

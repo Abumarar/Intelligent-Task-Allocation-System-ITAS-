@@ -223,7 +223,7 @@ class CVParser:
 
         try:
             # Debug: Log raw text to understand PyPDF2 output for problematic files
-            print(f"CV_PARSER_DEBUG: Raw text start: {repr(text[:500])}")
+
 
             # 0. Extract Email (Robust to spacing artifacts like "user @ example . com")
             # Look for: [words] possibly spaced, then @, then [words], then ., then [words]
@@ -231,7 +231,9 @@ class CVParser:
             # 1. Start with chars
             # 2. Allow space + chars repeatedly (for "mo . abumarar")
             # 3. Then @
-            email_match = re.search(r"([a-zA-Z0-9_.+-]+(?:\s*[a-zA-Z0-9_.+-]+)*\s*@\s*[a-zA-Z0-9-]+\s*\.\s*[a-zA-Z0-9.-]+)", text)
+            # Fix: Use safer regex to avoid catastrophic backtracking
+            email_match = re.search(r"([a-zA-Z0-9_.+-]+\s*@\s*[a-zA-Z0-9-]+\s*\.\s*[a-zA-Z0-9.-]+)", text)
+
             if email_match:
                 raw_email = email_match.group(1)
                 # Verify it looks like an email after cleaning

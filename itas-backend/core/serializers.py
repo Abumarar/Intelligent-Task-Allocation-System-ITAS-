@@ -190,6 +190,7 @@ class TaskMatchSerializer(serializers.Serializer):
     employee_title = serializers.CharField()
     suitability_score = serializers.FloatField()
     matching_skills = serializers.ListField(child=serializers.CharField())
+    missing_skills = serializers.ListField(child=serializers.CharField(), default=list)
     current_workload = serializers.FloatField()
 
 

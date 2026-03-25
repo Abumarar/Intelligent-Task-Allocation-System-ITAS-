@@ -2,7 +2,7 @@
 JWT Authentication for Django REST Framework
 """
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import authentication, exceptions
@@ -61,8 +61,8 @@ def generate_jwt_token(user):
     payload = {
         'user_id': user.id,
         'email': user.email,
-        'exp': datetime.utcnow() + timedelta(minutes=30),
-        'iat': datetime.utcnow(),
+        'exp': datetime.now(tz=dt_timezone.utc) + timedelta(days=7),
+        'iat': datetime.now(tz=dt_timezone.utc),
     }
     
     token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)

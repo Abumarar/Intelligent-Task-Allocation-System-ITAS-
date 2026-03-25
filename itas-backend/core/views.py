@@ -139,8 +139,6 @@ class AuthView(APIView):
 
         return Response({"user": user_data, "message": "Profile updated successfully"})
 
-        return Response({"user": user_data, "message": "Profile updated successfully"})
-
 
 class ReportsView(APIView):
     """View for generating system reports."""
@@ -152,21 +150,27 @@ class ReportsView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
             
-        # 1. Task Allocation Stats
-        total_tasks = Task.objects.count()
-        completed = Task.objects.filter(status='COMPLETED').count()
-        assigned = Task.objects.filter(status='ASSIGNED').count()
+        user = request.user
         
-        # 2. Workload Distribution
-        employees = Employee.objects.all()
+        # 1. Task Allocation Stats — scoped to this PM's tasks
+        pm_tasks = Task.objects.filter(created_by=user)
+        total_tasks = pm_tasks.count()
+        completed = pm_tasks.filter(status='COMPLETED').count()
+        assigned = pm_tasks.filter(status='ASSIGNED').count()
+        
+        # 2. Workload Distribution — scoped to this PM's employees
+        employees = Employee.objects.filter(manager=user)
         workload_data = [
             {"name": e.name, "workload": e.current_workload, "title": e.title}
              for e in employees
         ]
         
-        # 3. Assignment History (last 30 days)
+        # 3. Assignment History (last 30 days) — scoped to this PM's tasks
         last_30_days = timezone.now() - timezone.timedelta(days=30)
-        assignments = TaskAssignment.objects.filter(assigned_at__gte=last_30_days).count()
+        assignments = TaskAssignment.objects.filter(
+            assigned_at__gte=last_30_days,
+            task__created_by=user
+        ).count()
         
         return Response({
             "task_stats": {
@@ -404,7 +408,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         # Process CV in background thread
         def process_cv():
             try:
-                cv.refresh_from_db()
                 cv.refresh_from_db()
                 with cv.file.open("rb") as f:
                     file_content = f.read()
@@ -749,17 +752,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         
         with transaction.atomic():
-            # Update all active assignments to CANCELLED (or completed/history if we preferred, but CANCELLED implies unassigned)
-            # Actually if we unassign, we probably want to keep history?
-            # But earlier logic uses CANCELLED for "overwritten" assignments.
-            # Let's set status to CANCELLED for the active assignment.
             TaskAssignment.objects.filter(
                 task=task,
                 status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).update(status="CANCELLED")
-            
-            task.status = "UNASSIGNED"
-            task.save()
             
             task.status = "UNASSIGNED"
             task.save()
