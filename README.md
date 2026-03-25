@@ -27,6 +27,30 @@ ITAS is a web-based system designed to optimize software development task alloca
 - **Dashboard:** Shows employee workload and task completion.  
 - **Feedback Loop:** Updates scores based on task performance.
 
+## Visual Overview
+
+### Project Manager Interface
+
+#### PM Dashboard
+![PM Dashboard](docs/screenshots/dashboard.png)
+
+#### Talent Directory (CV Parsing)
+![Employees](docs/screenshots/employees.png)
+
+#### System Reports & Analytics
+![Reports](docs/screenshots/reports.png)
+
+#### Project Portfolio
+![Projects](docs/screenshots/projects.png)
+
+### Employee Interface
+
+#### My Profile & Workload
+![Employee Dashboard](docs/screenshots/employee_dashboard.png)
+
+#### Personal Settings
+![Employee Settings](docs/screenshots/employee_settings.png)
+
 ## Project Scope
 **Included:**
 - CV and portfolio parsing
