@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { fetchTasks, updateTask, assignTask, type Task } from "../../api/tasks";
+import { fetchTasks, updateTask, assignTask, ratePerformance, type Task, type PerformanceRatingData } from "../../api/tasks";
 import { fetchEmployees } from "../../api/employees";
 
 // Define TaskStatus type for type safety
@@ -17,6 +18,15 @@ const COLUMNS: { id: string; title: string; statuses: TaskStatus[]; color: strin
 export default function Tasks() {
     const { projectId } = useParams<{ projectId: string }>();
     const queryClient = useQueryClient();
+    
+    const [ratingTask, setRatingTask] = useState<Task | null>(null);
+    const [ratingData, setRatingData] = useState<PerformanceRatingData>({
+        quality_rating: 5,
+        timeliness_rating: 5,
+        communication_rating: 5,
+        technical_rating: 5,
+        performance_comments: ""
+    });
 
     // Fetch tasks
     const { data: tasksData, isLoading: isLoadingTasks } = useQuery({
@@ -57,8 +67,38 @@ export default function Tasks() {
         },
     });
 
-    const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
-        updateTaskMutation.mutate({ id: taskId, data: { status: newStatus } });
+    // Rate Performance Mutation
+    const ratePerformanceMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: PerformanceRatingData }) => ratePerformance(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            setRatingTask(null);
+        },
+    });
+
+    const handleStatusChange = (task: Task, newStatus: TaskStatus) => {
+        updateTaskMutation.mutate({ id: task.id, data: { status: newStatus } }, {
+            onSuccess: () => {
+                if (newStatus === "COMPLETED") {
+                    setRatingData({
+                        quality_rating: 5,
+                        timeliness_rating: 5,
+                        communication_rating: 5,
+                        technical_rating: 5,
+                        performance_comments: ""
+                    });
+                    setRatingTask(task);
+                }
+            }
+        });
+    };
+
+    const submitRating = () => {
+        if (ratingTask) {
+            ratePerformanceMutation.mutate({ id: ratingTask.id, data: ratingData });
+        }
     };
 
     const handleAssign = (taskId: string, employeeId: string) => {
@@ -198,7 +238,7 @@ export default function Tasks() {
                                                     <select
                                                         className="appearance-none pl-2 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
                                                         value={task.status}
-                                                        onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
+                                                        onChange={(e) => handleStatusChange(task, e.target.value as TaskStatus)}
                                                     >
                                                         <option value="DRAFT">Draft</option>
                                                         <option value="UNASSIGNED">Unassigned</option>
@@ -264,6 +304,71 @@ export default function Tasks() {
                     );
                 })}
             </div>
+
+            {/* Performance Rating Modal */}
+            {ratingTask && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <h2 className="text-xl font-bold text-slate-900 mb-1">Rate Performance</h2>
+                        <p className="text-sm text-slate-500 mb-6">
+                            Provide detailed feedback for <span className="font-semibold text-slate-700">{ratingTask.assigned_to_name || 'the employee'}</span> on task: <span className="italic">{ratingTask.title}</span>
+                        </p>
+
+                        <div className="space-y-4 mb-6">
+                            {['quality', 'timeliness', 'communication', 'technical'].map((metric) => {
+                                const key = `${metric}_rating` as keyof PerformanceRatingData;
+                                return (
+                                    <div key={metric} className="flex items-center justify-between">
+                                        <label className="text-sm font-medium text-slate-700 capitalize">{metric}</label>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3, 4, 5].map((val) => (
+                                                <button
+                                                    key={val}
+                                                    onClick={() => setRatingData({ ...ratingData, [key]: val })}
+                                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                                                        (ratingData[key] as number) >= val
+                                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                                                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                                    }`}
+                                                >
+                                                    {val}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            
+                            <div className="pt-2">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Additional Comments</label>
+                                <textarea 
+                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                    rows={3}
+                                    placeholder="Leave detailed feedback..."
+                                    value={ratingData.performance_comments}
+                                    onChange={(e) => setRatingData({...ratingData, performance_comments: e.target.value})}
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setRatingTask(null)}
+                                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                            >
+                                Skip
+                            </button>
+                            <button
+                                onClick={submitRating}
+                                disabled={ratePerformanceMutation.isPending}
+                                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                            >
+                                {ratePerformanceMutation.isPending ? 'Saving...' : 'Submit Rating'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -163,3 +163,16 @@ export async function updateTaskProgress(taskId: string, status?: TaskStatus, no
     const res = await api.post(withSlash(`/tasks/${taskId}/progress`), { status, notes });
     return res.data;
 }
+
+export interface PerformanceRatingData {
+    quality_rating: number;
+    timeliness_rating: number;
+    communication_rating: number;
+    technical_rating: number;
+    performance_comments: string;
+}
+
+export async function ratePerformance(taskId: string, data: PerformanceRatingData) {
+    const res = await api.post(withSlash(`/tasks/${taskId}/rate-performance`), data);
+    return res.data;
+}

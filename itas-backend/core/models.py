@@ -52,6 +52,19 @@ class Employee(models.Model):
         max_capacity = 5
         return min(100, (active_tasks / max_capacity) * 100) if max_capacity > 0 else 0
 
+    @property
+    def average_performance(self):
+        """Calculate average performance rating from completed tasks."""
+        completed_assignments = self.taskassignment_set.filter(
+            status='COMPLETED', 
+            performance_rating__isnull=False
+        )
+        if not completed_assignments.exists():
+            return None
+        return completed_assignments.aggregate(
+            models.Avg('performance_rating')
+        )['performance_rating__avg']
+
 
 class CV(models.Model):
     """CV/Portfolio document uploaded by employee."""
@@ -191,6 +204,15 @@ class TaskAssignment(models.Model):
     started_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True, help_text="Employee progress notes")
+    performance_rating = models.FloatField(
+        null=True, blank=True,
+        help_text="Overall PM rating of employee performance (calculated average)"
+    )
+    quality_rating = models.IntegerField(null=True, blank=True)
+    timeliness_rating = models.IntegerField(null=True, blank=True)
+    communication_rating = models.IntegerField(null=True, blank=True)
+    technical_rating = models.IntegerField(null=True, blank=True)
+    performance_comments = models.TextField(blank=True, null=True, help_text="Detailed PM feedback")
 
     class Meta:
         unique_together = ['task', 'employee']

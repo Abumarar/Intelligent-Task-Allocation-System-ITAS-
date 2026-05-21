@@ -25,7 +25,7 @@ ITAS is a web-based system designed to optimize software development task alloca
 - **Task Manager:** Task creation and skill tagging.  
 - **Matching Engine:** Calculates suitability scores with dual-stream logic for fresh vs senior employees.  
 - **Dashboard:** Shows employee workload and task completion.  
-- **Feedback Loop:** Updates scores based on task performance.
+- **Feedback Loop & Performance Rating:** Detailed PM feedback on completed tasks updates employee suitability scores dynamically.
 
 ## Visual Overview
 
@@ -56,9 +56,10 @@ ITAS is a web-based system designed to optimize software development task alloca
 - CV and portfolio parsing
 - NLP-based skill identification
 - Task creation with skill tags
-- Algorithmic matching and scoring
+- Algorithmic matching and scoring (incorporating past performance)
 - Dashboard for project managers
 - Employee profile management
+- Detailed PM rating system for completed tasks
 
 **Excluded:**
 - Soft skills evaluation

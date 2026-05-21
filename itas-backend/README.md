@@ -170,13 +170,13 @@ itas-backend/
 └── README.md
 ```
 
-## Matching Algorithm
+The matching engine calculates suitability scores (0-100) based on dynamic priority weightings. For a standard "Medium" priority task:
 
-The matching engine calculates suitability scores (0-100) based on:
-
-1. **Skill Matching (70% weight)**: How well employee skills match task requirements
+1. **Skill Matching (45% weight)**: How well employee skills match task requirements
 2. **Workload Balance (20% weight)**: Employee's current availability
-3. **Experience Level (10% weight)**: Confidence scores from skill extraction
+3. **Skill Coverage (15% weight)**: Proportion of required skills the employee possesses
+4. **Experience Level (10% weight)**: Confidence scores from skill extraction
+5. **Past Performance (10% weight)**: Based on detailed PM ratings (quality, timeliness, communication, technical) on past tasks
 
 ## Development Notes
 

@@ -15,9 +15,9 @@ class MatchingEngine:
 
     def __init__(self):
         self.weights_by_priority = {
-            "HIGH": {"skill": 0.6, "coverage": 0.15, "experience": 0.15, "workload": 0.1},
-            "MEDIUM": {"skill": 0.55, "coverage": 0.15, "experience": 0.1, "workload": 0.2},
-            "LOW": {"skill": 0.45, "coverage": 0.15, "experience": 0.1, "workload": 0.3},
+            "HIGH": {"skill": 0.5, "coverage": 0.15, "experience": 0.15, "workload": 0.1, "performance": 0.1},
+            "MEDIUM": {"skill": 0.45, "coverage": 0.15, "experience": 0.1, "workload": 0.2, "performance": 0.1},
+            "LOW": {"skill": 0.35, "coverage": 0.15, "experience": 0.1, "workload": 0.3, "performance": 0.1},
         }
         self.skill_extractor = SkillExtractor()
 
@@ -58,8 +58,16 @@ class MatchingEngine:
         skill_profile: Dict[str, float],
         weights: Dict[str, float]
     ) -> float:
+        performance_score = self._calculate_performance_score(employee)
+
         if not normalized_required:
             workload_score = self._calculate_workload_score(employee)
+            workload_weight = weights.get("workload", 0.0)
+            perf_weight = weights.get("performance", 0.0)
+            total_weight = workload_weight + perf_weight
+            
+            if total_weight > 0:
+                return (workload_score * workload_weight + performance_score * perf_weight) / total_weight
             return workload_score
 
         skill_score = self._calculate_skill_match_score(skill_profile, normalized_required)
@@ -71,7 +79,8 @@ class MatchingEngine:
             skill_score * weights["skill"] +
             coverage_score * weights["coverage"] +
             experience_score * weights["experience"] +
-            workload_score * weights["workload"]
+            workload_score * weights["workload"] +
+            performance_score * weights.get("performance", 0.0)
         )
 
         return max(0.0, min(1.0, total_score))
@@ -153,6 +162,13 @@ class MatchingEngine:
             availability *= 0.85
 
         return max(0.0, min(1.0, availability))
+
+    def _calculate_performance_score(self, employee: Employee) -> float:
+        """Calculate performance score based on past tasks rating (0-1)."""
+        avg_rating = employee.average_performance
+        if avg_rating is None:
+            return 0.5  # Neutral score for new employees without history
+        return max(0.0, min(1.0, avg_rating / 5.0))
 
     def _match_skill(self, required_skill: str, skill_profile: Dict[str, float]) -> float:
         if required_skill in skill_profile:
@@ -313,6 +329,7 @@ class MatchingEngine:
                         skill_profile
                     ),
                     "current_workload": employee.current_workload,
+                    "average_performance": employee.average_performance,
                 })
 
         matches.sort(key=lambda x: x["suitability_score"], reverse=True)

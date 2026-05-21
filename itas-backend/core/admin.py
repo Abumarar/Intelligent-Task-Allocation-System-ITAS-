@@ -61,6 +61,6 @@ class TaskSkillAdmin(admin.ModelAdmin):
 @admin.register(TaskAssignment)
 class TaskAssignmentAdmin(admin.ModelAdmin):
     """Task assignment admin."""
-    list_display = ['task', 'employee', 'suitability_score', 'status', 'assigned_at']
+    list_display = ['task', 'employee', 'suitability_score', 'status', 'performance_rating', 'assigned_at']
     list_filter = ['status', 'assigned_at']
     search_fields = ['task__title', 'employee__user__username']

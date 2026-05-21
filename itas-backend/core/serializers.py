@@ -39,7 +39,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Employee
-        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'cvErrorMessage', 'cvUrl', 'current_workload', 'assigned_tasks']
+        fields = ['id', 'name', 'title', 'email', 'skills', 'cvStatus', 'cvUpdatedAt', 'cvErrorMessage', 'cvUrl', 'current_workload', 'assigned_tasks', 'average_performance']
         read_only_fields = ['id']
     
     def get_assigned_tasks(self, obj):
@@ -192,6 +192,7 @@ class TaskMatchSerializer(serializers.Serializer):
     matching_skills = serializers.ListField(child=serializers.CharField())
     missing_skills = serializers.ListField(child=serializers.CharField(), default=list)
     current_workload = serializers.FloatField()
+    average_performance = serializers.FloatField(allow_null=True, required=False)
 
 
 class TaskAssignmentSerializer(serializers.ModelSerializer):
@@ -204,7 +205,9 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'task', 'task_title', 'employee', 'employee_name',
             'suitability_score', 'status', 'assigned_at', 
-            'started_at', 'completed_at', 'notes'
+            'started_at', 'completed_at', 'notes', 'performance_rating',
+            'quality_rating', 'timeliness_rating', 'communication_rating',
+            'technical_rating', 'performance_comments'
         ]
         read_only_fields = ['id', 'assigned_at']
 

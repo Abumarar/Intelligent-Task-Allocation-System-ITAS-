@@ -807,6 +807,62 @@ class TaskViewSet(viewsets.ModelViewSet):
         
         return Response({"message": "Progress updated"})
 
+    @action(detail=True, methods=["post"], url_path="rate-performance")
+    def rate_performance(self, request, pk=None):
+        """Rate employee performance with detailed metrics for a completed task (PM only)."""
+        task = self.get_object()
+        user = request.user
+        
+        if user.role != "PM":
+            return Response(
+                {"message": "Only Project Managers can rate performance"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        data = request.data
+        
+        try:
+            quality = int(data.get("quality_rating", 0))
+            timeliness = int(data.get("timeliness_rating", 0))
+            communication = int(data.get("communication_rating", 0))
+            technical = int(data.get("technical_rating", 0))
+            
+            for r in [quality, timeliness, communication, technical]:
+                if r < 1 or r > 5:
+                    raise ValueError("Ratings must be between 1 and 5")
+                    
+        except (TypeError, ValueError) as e:
+            return Response(
+                {"message": str(e) if str(e) else "Ratings must be valid integers between 1 and 5"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        comments = data.get("performance_comments", "")
+        overall_rating = (quality + timeliness + communication + technical) / 4.0
+            
+        # Find the most recent active/completed assignment
+        assignment = TaskAssignment.objects.filter(task=task).order_by('-assigned_at').first()
+        if not assignment:
+            return Response(
+                {"message": "No assignment found for this task"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        assignment.quality_rating = quality
+        assignment.timeliness_rating = timeliness
+        assignment.communication_rating = communication
+        assignment.technical_rating = technical
+        assignment.performance_comments = comments
+        assignment.performance_rating = overall_rating
+        assignment.save()
+        
+        AuditService.log(user, "UPDATE", task, f"Rated performance detailed: {overall_rating}/5")
+        
+        return Response({
+            "message": "Performance rating saved successfully",
+            "performance_rating": overall_rating
+        })
+
 
 class DashboardView(APIView):
     """Dashboard statistics endpoint."""

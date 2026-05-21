@@ -1,77 +1,51 @@
-# React + TypeScript + Vite
+# Intelligent Task Allocation System (ITAS) - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the Intelligent Task Allocation System (ITAS), a web-based platform designed to optimize software development task allocation using AI and data-driven assignment algorithms.
 
-Currently, two official plugins are available:
+## Tech Stack
+- **Framework:** React + TypeScript + Vite
+- **Styling:** Tailwind CSS
+- **State Management & Data Fetching:** TanStack Query (React Query)
+- **Routing:** React Router v6
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
+- **Project Manager Dashboard:** View real-time analytics on employee workload, task completion rates, and project progress.
+- **Kanban Task Board:** Drag-and-drop or status-based task management.
+- **AI Matching Integration:** Visualize the AI recommendations for task assignment with specific skill overlaps and performance predictions.
+- **Performance Rating System:** Detailed modal interfaces for Project Managers to provide comprehensive feedback on completed tasks.
+- **Employee Portal:** A personal view for employees to manage their tasks, workload, and skills profile.
 
-## React Compiler
+## Setup Instructions
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Installation
+```bash
+cd itas-frontend
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 3. Environment Configuration
+Create a `.env` file in the `itas-frontend` directory to point to your local or remote backend:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
 ```
+
+### 4. Running the Development Server
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`.
+
+## Building for Production
+```bash
+npm run build
+```
+The output will be generated in the `dist/` directory.
 
 ## Deployment
-
-See `DEPLOYMENT.md` for instructions to deploy the frontend to Vercel. Important: set the `VITE_API_BASE_URL` environment variable in Vercel to point to your Render backend (for example, `https://api.jobtecacademy.com/api`). If your backend is on the same domain, the client will default to the same origin under `/api`.
+See `DEPLOYMENT.md` for instructions to deploy the frontend to Vercel or similar platforms. Ensure you set the `VITE_API_BASE_URL` environment variable in your deployment platform to point to your live backend.
