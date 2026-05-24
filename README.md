@@ -89,6 +89,11 @@ To get both the frontend and backend running locally on a Windows machine:
    setup.bat
    ```
    *(This will create the virtual environment, install dependencies, and create the `.env` file.)*
+   
+   > [!IMPORTANT]
+   > **Python Version & Windows Aliases:** 
+   > - It is highly recommended to have **Python 3.11** installed.
+   > - If you receive a *"Python was not found"* error, turn off Windows Python aliases in **Settings > Apps > Advanced app settings > App execution aliases** (toggle off **Python** and **Python3**).
 
 3. **Start the Backend Server:**
    ```cmd

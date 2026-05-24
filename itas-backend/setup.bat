@@ -4,8 +4,19 @@ echo Setting up ITAS Backend...
 :: Create virtual environment if it doesn't exist
 if not exist venv (
     echo Creating virtual environment...
+    
+    :: Try python launcher with version 3.11
+    py -3.11 -m venv venv 2>nul
+    if exist venv\Scripts\activate.bat goto venv_created
+    
+    :: Try python3.11 executable directly
+    python3.11 -m venv venv 2>nul
+    if exist venv\Scripts\activate.bat goto venv_created
+    
+    :: Fallback to default python
     python -m venv venv
 )
+:venv_created
 
 :: Activate virtual environment
 echo Activating virtual environment...

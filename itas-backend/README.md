@@ -23,15 +23,20 @@ Backend API for the Intelligent Task Allocation System built with Django REST Fr
 
 ### 1. Prerequisites
 
-- Python 3.8+
-- PostgreSQL 12+
-- pip/virtualenv
+- **Python 3.11.x (Recommended)**: It is highly recommended to use Python 3.11. Newer versions (like Python 3.12+) or pre-releases (like Python 3.14+) might not have pre-compiled wheels for scientific dependencies (e.g., `numpy`, `scikit-learn`, `spacy`) on PyPI, which forces `pip` to compile them from source (requiring C++ compilers like MSVC/GCC).
+- **PostgreSQL 12+**
+- **pip / virtualenv**
+
+> [!TIP]
+> **Troubleshooting Windows App Execution Aliases:**
+> If running `python` or `setup.bat` displays the message: *"Python was not found; run without arguments to install from the Microsoft Store..."*, you need to disable Windows' default Python aliases. Go to **Settings > Apps > Advanced app settings > App execution aliases** and toggle off **Python** and **Python3**.
 
 ### 2. Install Dependencies
 
 **Option A: Using setup script (Recommended)**
 
 **On Windows:**
+The setup script will automatically try to locate a Python 3.11 installation using the Python Launcher (`py -3.11`) or direct executable (`python3.11`) to ensure compatibility:
 ```cmd
 cd itas-backend
 setup.bat
@@ -47,7 +52,8 @@ chmod +x setup.sh
 **Option B: Manual setup**
 ```cmd
 cd itas-backend
-python -m venv venv
+# Force creation using Python 3.11 if multiple versions are installed
+py -3.11 -m venv venv  # Or: python3.11 -m venv venv
 venv\Scripts\activate  # On Linux/Mac: source venv/bin/activate
 pip install -r requirements.txt
 
