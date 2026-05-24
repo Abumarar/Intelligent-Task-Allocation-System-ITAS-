@@ -242,7 +242,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     import uuid
                     username = f"{username}_{uuid.uuid4().hex[:4]}"
 
-                random_password = User.objects.make_random_password(length=12)
+                import secrets
+                import string
+                random_password = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
                 user = User.objects.create_user(
                     username=username,
                     email=email,
