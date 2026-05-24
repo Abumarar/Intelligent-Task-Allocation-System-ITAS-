@@ -30,6 +30,14 @@ Backend API for the Intelligent Task Allocation System built with Django REST Fr
 ### 2. Install Dependencies
 
 **Option A: Using setup script (Recommended)**
+
+**On Windows:**
+```cmd
+cd itas-backend
+setup.bat
+```
+
+**On Linux/Mac:**
 ```bash
 cd itas-backend
 chmod +x setup.sh
@@ -37,10 +45,10 @@ chmod +x setup.sh
 ```
 
 **Option B: Manual setup**
-```bash
+```cmd
 cd itas-backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate  # On Linux/Mac: source venv/bin/activate
 pip install -r requirements.txt
 
 # Download NLTK data

@@ -242,10 +242,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     import uuid
                     username = f"{username}_{uuid.uuid4().hex[:4]}"
 
+                random_password = User.objects.make_random_password(length=12)
                 user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password="password123",  # Default password
+                    password=random_password,
                     first_name=name.split(" ")[0],
                     last_name=" ".join(name.split(" ")[1:]) if " " in name else "",
                     role="EMPLOYEE"

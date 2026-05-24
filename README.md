@@ -73,12 +73,39 @@ ITAS is a web-based system designed to optimize software development task alloca
 - **Database:** PostgreSQL  
 - **Text Processing:** PyPDF2, NLTK / spaCy
 
-## Team Members
-| Name | Role |
-|------|------|
-| همام محمد خير موسى العمري | Frontend Specialist (Dashboard & UI) |
-| احمد وائل حسين ابو شريحه  | Backend & Database Architect |
-| محمد اسامه محمد ابو مرار | AI & NLP Specialist |
+## Quick Start (Windows)
+
+To get both the frontend and backend running locally on a Windows machine:
+
+1. **Clone the repository:**
+   ```cmd
+   git clone <repository-url>
+   cd "Intelligent Task Allocation System (ITAS)"
+   ```
+
+2. **Setup the Backend:**
+   ```cmd
+   cd itas-backend
+   setup.bat
+   ```
+   *(This will create the virtual environment, install dependencies, and create the `.env` file.)*
+
+3. **Start the Backend Server:**
+   ```cmd
+   :: Make sure your virtual environment is activated
+   venv\Scripts\activate
+   python manage.py runserver
+   ```
+   *(The API will be available at `http://localhost:8000/api/`)*
+
+4. **Setup and Start the Frontend:**
+   Open a new terminal window:
+   ```cmd
+   cd "Intelligent Task Allocation System (ITAS)\itas-frontend"
+   npm install
+   npm run dev
+   ```
+   *(The app will be available at `http://localhost:5173`)*
 
 ## References
 - Jira Smart Assignment and Automation Tools  

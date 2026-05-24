@@ -22,7 +22,7 @@ This is the frontend application for the Intelligent Task Allocation System (ITA
 - npm or yarn
 
 ### 2. Installation
-```bash
+```cmd
 cd itas-frontend
 npm install
 ```
@@ -35,14 +35,14 @@ VITE_API_BASE_URL=http://localhost:8000/api
 ```
 
 ### 4. Running the Development Server
-```bash
+```cmd
 npm run dev
 ```
 
 The application will be available at `http://localhost:5173`.
 
 ## Building for Production
-```bash
+```cmd
 npm run build
 ```
 The output will be generated in the `dist/` directory.
