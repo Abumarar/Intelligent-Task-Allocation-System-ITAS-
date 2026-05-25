@@ -6,8 +6,8 @@ Backend API for the Intelligent Task Allocation System built with Django REST Fr
 
 ## Features
 
-- **CV Parsing**: Extract text from PDF CVs using PyPDF2
-- **Skill Extraction**: Use NLP (spaCy/NLTK) to extract technical skills from CV text
+- **CV Parsing**: Extract text from PDF and DOCX CVs using PyPDF2 and python-docx
+- **Skill Extraction**: Use regex-based token matching to extract technical skills and ML text classification to predict roles
 - **Intelligent Matching**: Match tasks to employees based on skills, workload, and suitability scores
 - **Task Management**: Create, assign, and track tasks
 - **Dashboard Analytics**: Get statistics on tasks, capacity, and skill coverage
@@ -17,7 +17,7 @@ Backend API for the Intelligent Task Allocation System built with Django REST Fr
 
 - **Framework**: Django 5.1.4 + Django REST Framework
 - **Database**: PostgreSQL (Supabase)
-- **NLP & Text Processing**: spaCy, NLTK, PyPDF2
+- **Text Processing & ML**: PyPDF2, python-docx, scikit-learn (joblib), spaCy (for Named Entity Recognition)
 - **Authentication**: JWT (PyJWT)
 - **Deployment**: Render
 
@@ -197,7 +197,7 @@ The matching engine calculates suitability scores (0-100) based on dynamic prior
 ## Development Notes
 
 - CV processing happens asynchronously in background threads
-- Skills are extracted using pattern matching and NLP techniques
+- Skills are extracted using curated regex patterns and token-matching heuristics
 - The system supports both CV-extracted and manually added skills
 - JWT tokens expire after 7 days
 
