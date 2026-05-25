@@ -1,7 +1,9 @@
 # Intelligent Task Allocation System (ITAS)
 
+**Live Demo:** [https://www.jobtecacademy.com/](https://www.jobtecacademy.com/)
+
 ![Status: In Progress](https://img.shields.io/badge/status-in%20progress-yellow)
-![Tech Stack](https://img.shields.io/badge/tech-Python%2C%20Django%2FFlask%2C%20React.js-blue)
+![Tech Stack](https://img.shields.io/badge/tech-Python%2C%20Django-blue)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-green)
 
 ## Project Overview
@@ -111,6 +113,40 @@ To get both the frontend and backend running locally on a Windows machine:
    npm run dev
    ```
    *(The app will be available at `http://localhost:5173`)*
+
+## Cloud Deployment (Production)
+
+This project uses a modern decoupled architecture:
+- **Database:** Supabase (PostgreSQL)
+- **Backend API:** Render (Django)
+- **Frontend:** Vercel (React)
+
+### 1. Database (Supabase)
+1. Create a project on [Supabase](https://supabase.com).
+2. Go to **Project Settings -> Database** and copy your **Connection String (URI)**.
+3. Keep the password you created safe.
+
+### 2. Backend API (Render)
+1. Push your `itas-backend` code to GitHub.
+2. In [Render](https://render.com), create a new **Web Service** connected to your repo.
+3. Configure the following build settings:
+   - **Root Directory:** `itas-backend`
+   - **Build Command:** `./build.sh`
+   - **Start Command:** `gunicorn itas.wsgi:application`
+4. Set the following **Environment Variables**:
+   - `DATABASE_URL`: Your Supabase connection URI (e.g., `postgresql://postgres...`)
+   - `SECRET_KEY`: A secure random string for Django
+   - `DEBUG`: `False`
+   - `JWT_SECRET_KEY`: A secure key for tokens
+
+### 3. Frontend (Vercel)
+1. Push your `itas-frontend` code to GitHub.
+2. In [Vercel](https://vercel.com), import the repository.
+3. Ensure the Framework Preset is set to **Vite** or **React**.
+4. Set the **Root Directory** to `itas-frontend`.
+5. Set the **Environment Variable**:
+   - `VITE_API_BASE_URL`: `https://<your-render-app-url>.onrender.com/api`
+6. Deploy!
 
 ## References
 - Jira Smart Assignment and Automation Tools  

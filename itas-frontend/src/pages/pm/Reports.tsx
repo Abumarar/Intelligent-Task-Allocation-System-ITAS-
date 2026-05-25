@@ -91,11 +91,11 @@ export default function Reports() {
                                     </td>
                                     <td>
                                         {emp.workload > 80 ? (
-                                            <span className="badge status-error">Overloaded</span>
+                                            <span className="badge status-failed">Overloaded</span>
                                         ) : emp.workload > 50 ? (
                                             <span className="badge status-processing">Active</span>
                                         ) : (
-                                            <span className="badge status-success">Available</span>
+                                            <span className="badge status-ready">Available</span>
                                         )}
                                     </td>
                                 </tr>

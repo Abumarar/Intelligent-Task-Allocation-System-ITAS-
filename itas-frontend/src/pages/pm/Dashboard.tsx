@@ -69,9 +69,8 @@ export default function PMDashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    // 6 AM to 12 PM -> Good morning
-    // Else (12 PM to 6 AM) -> Good evening
     if (hour >= 6 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 18) return "Good afternoon";
     return "Good evening";
   };
 

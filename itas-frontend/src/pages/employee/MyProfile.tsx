@@ -124,10 +124,6 @@ export default function MyProfile() {
             <div className="avatar">{user?.name ? user.name.slice(0, 2).toUpperCase() : "ME"}</div>
             <div>
               <div className="profile-name">{user?.name || "Employee"}</div>
-              <div className="profile-role">Individual Contributor</div>
-            </div>
-            <div>
-              <div className="profile-name">{user?.name || "Employee"}</div>
               <div className="profile-role">{profileData?.employee?.title || "Individual Contributor"}</div>
             </div>
             <button className="btn btn-sm btn-outline ml-auto" onClick={openEditProfile}>
@@ -249,31 +245,31 @@ export default function MyProfile() {
 
       {/* Edit Profile Modal */}
       {isEditProfileOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Edit Profile</h3>
-            <div className="py-4 space-y-4">
-              <div className="form-control">
-                <label className="label">Name</label>
+        <div className="modal-overlay">
+          <div className="modal card">
+            <h2 className="card-title">Edit Profile</h2>
+            <div className="form-section">
+              <div className="field">
+                <label className="field-label">Name</label>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                 />
               </div>
-              <div className="form-control">
-                <label className="label">Title</label>
+              <div className="field">
+                <label className="field-label">Title</label>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                 />
               </div>
             </div>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setIsEditProfileOpen(false)}>Cancel</button>
+            <div className="form-actions" style={{ marginTop: '16px' }}>
+              <button className="btn btn-ghost" onClick={() => setIsEditProfileOpen(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleUpdateProfile}>Save</button>
             </div>
           </div>
@@ -282,14 +278,14 @@ export default function MyProfile() {
 
       {/* Task Update Modal */}
       {selectedTask && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Update Progress: {selectedTask.title}</h3>
-            <div className="py-4 space-y-4">
-              <div className="form-control">
-                <label className="label">Status</label>
+        <div className="modal-overlay">
+          <div className="modal card">
+            <h2 className="card-title">Update Progress: {selectedTask.title}</h2>
+            <div className="form-section">
+              <div className="field">
+                <label className="field-label">Status</label>
                 <select
-                  className="select select-bordered w-full"
+                  className="select"
                   value={taskStatus}
                   onChange={(e) => setTaskStatus(e.target.value as any)}
                 >
@@ -299,18 +295,18 @@ export default function MyProfile() {
                   <option value="COMPLETED">Completed</option>
                 </select>
               </div>
-              <div className="form-control">
-                <label className="label">Notes</label>
+              <div className="field">
+                <label className="field-label">Notes</label>
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea"
                   placeholder="Add progress notes..."
                   value={taskNotes}
                   onChange={(e) => setTaskNotes(e.target.value)}
                 />
               </div>
             </div>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setSelectedTask(null)}>Cancel</button>
+            <div className="form-actions" style={{ marginTop: '16px' }}>
+              <button className="btn btn-ghost" onClick={() => setSelectedTask(null)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleUpdateTask}>Update</button>
             </div>
           </div>

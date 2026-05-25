@@ -1,5 +1,7 @@
 # Intelligent Task Allocation System (ITAS) - Backend
 
+**Live Demo:** [https://www.jobtecacademy.com/](https://www.jobtecacademy.com/)
+
 Backend API for the Intelligent Task Allocation System built with Django REST Framework.
 
 ## Features
@@ -209,6 +211,25 @@ python manage.py test
 
 Access Django admin at `http://localhost:8000/admin/` with superuser credentials.
 
-## Deployment
+## Deployment (Supabase & Render)
 
-See `DEPLOYMENT.md` for Render deployment instructions and recommended environment variables (SECRET_KEY, DEBUG=False, DATABASE_URL, etc.).
+This backend is designed to be deployed using **Render** for Python hosting and **Supabase** for PostgreSQL database management.
+
+### 1. Supabase (Database)
+1. Create a project on [Supabase](https://supabase.com).
+2. Retrieve your **Connection String (URI)** from Database Settings. Make sure it ends with `/postgres`.
+
+### 2. Render (Backend Application)
+1. Create a new **Web Service** on [Render](https://render.com).
+2. Connect your GitHub repository.
+3. Use the following configuration:
+   - **Root Directory:** `itas-backend`
+   - **Environment:** `Python 3`
+   - **Build Command:** `./build.sh` (or `pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate`)
+   - **Start Command:** `gunicorn itas.wsgi:application`
+4. Set the necessary **Environment Variables**:
+   - `DATABASE_URL`: `postgresql://...` (from Supabase)
+   - `SECRET_KEY`: `<Your Secure Random String>`
+   - `DEBUG`: `False`
+   - `JWT_SECRET_KEY`: `<Your Secure JWT String>`
+5. Deploy the service. Your backend is now live and talking to Supabase!
