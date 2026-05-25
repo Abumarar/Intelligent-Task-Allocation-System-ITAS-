@@ -15,11 +15,11 @@ Backend API for the Intelligent Task Allocation System built with Django REST Fr
 
 ## Technology Stack
 
-- **Framework**: Django 4.2.7 + Django REST Framework
-- **Database**: PostgreSQL
-- **NLP**: spaCy, NLTK
-- **PDF Processing**: PyPDF2
+- **Framework**: Django 5.1.4 + Django REST Framework
+- **Database**: PostgreSQL (Supabase)
+- **NLP & Text Processing**: spaCy, NLTK, PyPDF2
 - **Authentication**: JWT (PyJWT)
+- **Deployment**: Render
 
 ## Setup Instructions
 

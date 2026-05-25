@@ -70,10 +70,11 @@ ITAS is a web-based system designed to optimize software development task alloca
 - Mobile application
 
 ## Technical Stack
-- **Frontend:** React.js or Vue.js  
-- **Backend:** Python (Django or Flask)  
-- **Database:** PostgreSQL  
-- **Text Processing:** PyPDF2, NLTK / spaCy
+- **Frontend:** React.js (Vite)
+- **Backend:** Python (Django & Django REST Framework)
+- **Database:** PostgreSQL (Supabase)
+- **Text Processing & NLP:** PyPDF2, NLTK, spaCy
+- **Deployment:** Vercel (Frontend) & Render (Backend)
 
 ## Quick Start (Windows)
 
