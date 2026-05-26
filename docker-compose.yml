@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=itas_db
+      - POSTGRES_USER=itas_user
+      - POSTGRES_PASSWORD=itas_password
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./itas-backend
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn --bind 0.0.0.0:8000 itas.wsgi:application"
+    volumes:
+      - ./itas-backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://itas_user:itas_password@db:5432/itas_db
+      - REDIS_URL=redis://redis:6379/1
+      - DJANGO_SETTINGS_MODULE=itas.settings.development
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./itas-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

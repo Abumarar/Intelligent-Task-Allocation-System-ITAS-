@@ -32,6 +32,9 @@ export type Task = {
 
     assigned_to?: string;
     assigned_to_name?: string;
+    employee_notes?: string;
+    performance_rating?: number | null;
+    performance_comments?: string | null;
 };
 
 export type TaskCreateInput = {

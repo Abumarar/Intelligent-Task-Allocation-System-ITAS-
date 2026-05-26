@@ -6,6 +6,7 @@ export type EmployeeProfile = {
     tasks: Array<{
         id: string;
         title: string;
+        description: string;
         status: string;
         priority: string;
         suitability_score: number;

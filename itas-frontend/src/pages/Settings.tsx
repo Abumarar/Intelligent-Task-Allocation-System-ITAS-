@@ -81,7 +81,7 @@ export default function Settings() {
                                 </div>
                                 <button
                                     onClick={toggleTheme}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 ${theme === "dark" ? "bg-[var(--accent)]" : "bg-gray-200"
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 ${theme === "dark" ? "bg-[var(--accent)]" : "bg-gray-200 dark:bg-slate-600"
                                         }`}
                                 >
                                     <span

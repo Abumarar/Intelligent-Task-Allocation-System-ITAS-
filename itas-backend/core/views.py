@@ -1,34 +1,36 @@
 """
 API Views for ITAS
 """
-import threading
-from django.db import transaction
-from django.utils import timezone
-from django.contrib.auth import get_user_model, authenticate
-from django.db.models import Q
 
-from rest_framework import viewsets, status, exceptions
+import threading
+
+from django.contrib.auth import authenticate, get_user_model
+from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
+from rest_framework import exceptions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
 
-from core.models import Employee, Task, TaskAssignment, Skill, CV, Project
-from core.serializers import (
-    UserSerializer, EmployeeSerializer, TaskSerializer,
-    TaskMatchSerializer, TaskAssignmentSerializer, DashboardStatsSerializer, ProjectSerializer
-)
 from core.authentication import generate_jwt_token
-from core.services.cv_parser import CVParser
-from core.services.skill_extractor import SkillExtractor
-from core.services.matching_engine import MatchingEngine
+from core.models import CV, Employee, Project, Skill, Task, TaskAssignment
+from core.serializers import (DashboardStatsSerializer, EmployeeSerializer,
+                              ProjectSerializer, TaskAssignmentSerializer,
+                              TaskMatchSerializer, TaskSerializer,
+                              UserSerializer)
 from core.services.audit_service import AuditService
+from core.services.cv_parser import CVParser
+from core.services.matching_engine import MatchingEngine
+from core.services.skill_extractor import SkillExtractor
 
 User = get_user_model()
 
 
 class AuthView(APIView):
     """Authentication endpoints."""
+
     permission_classes = [AllowAny]
     # authentication_classes default to settings (JWT) which is fine for login as it handles Anonymous
 
@@ -37,13 +39,13 @@ class AuthView(APIView):
         if not request.user.is_authenticated:
             return Response(
                 {"message": "Invalid or expired token"},
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_401_UNAUTHORIZED,
             )
-            
+
         user_serializer = UserSerializer(request.user)
         user_data = user_serializer.data
         user_data["id"] = str(user_data["id"])
-        
+
         return Response({"user": user_data})
 
     def post(self, request):
@@ -54,19 +56,17 @@ class AuthView(APIView):
         if not email_or_username or not password:
             return Response(
                 {"message": "Please provide both email/username and password"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # 1. Try to find user by email or username
         user = User.objects.filter(
-            Q(email__iexact=email_or_username) | 
-            Q(username__iexact=email_or_username)
+            Q(email__iexact=email_or_username) | Q(username__iexact=email_or_username)
         ).first()
 
         if not user:
             return Response(
-                {"message": "Invalid credentials"},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
         # Use Django's authenticate to respect auth backends properly
@@ -75,8 +75,7 @@ class AuthView(APIView):
 
         if not authed:
             return Response(
-                {"message": "Invalid credentials"},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
         # Generate token
@@ -87,22 +86,19 @@ class AuthView(APIView):
         user_data = user_serializer.data
         user_data["id"] = str(user_data["id"])  # frontend compatibility
 
-        return Response(
-            {"token": token, "user": user_data},
-            status=status.HTTP_200_OK
-        )
+        return Response({"token": token, "user": user_data}, status=status.HTTP_200_OK)
 
     def patch(self, request):
         """Update current user profile (Name, Email, Password)."""
         if not request.user.is_authenticated:
             return Response(
                 {"message": "Authentication required"},
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         user = request.user
         data = request.data
-        
+
         # Update Name
         if "name" in data:
             name_parts = data["name"].strip().split()
@@ -116,7 +112,7 @@ class AuthView(APIView):
                 if User.objects.filter(email=new_email).exclude(id=user.id).exists():
                     return Response(
                         {"message": "Email already in use"},
-                        status=status.HTTP_400_BAD_REQUEST
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
                 user.email = new_email
 
@@ -124,14 +120,14 @@ class AuthView(APIView):
         if "password" in data:
             new_password = data["password"].strip()
             if len(new_password) < 6:
-                 return Response(
+                return Response(
                     {"message": "Password must be at least 6 characters"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             user.set_password(new_password)
 
         user.save()
-        
+
         # Serialize updated user
         user_serializer = UserSerializer(user)
         user_data = user_serializer.data
@@ -142,56 +138,63 @@ class AuthView(APIView):
 
 class ReportsView(APIView):
     """View for generating system reports."""
-    
+
     def get(self, request):
         if request.user.role != "PM":
-             return Response(
+            return Response(
                 {"message": "Only Project Managers can view reports"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
-            
+
         user = request.user
-        
+
         # 1. Task Allocation Stats — scoped to this PM's tasks
         pm_tasks = Task.objects.filter(created_by=user)
         total_tasks = pm_tasks.count()
-        completed = pm_tasks.filter(status='COMPLETED').count()
-        assigned = pm_tasks.filter(status='ASSIGNED').count()
-        
+        completed = pm_tasks.filter(status="COMPLETED").count()
+        assigned = pm_tasks.filter(status="ASSIGNED").count()
+
         # 2. Workload Distribution — scoped to this PM's employees
         employees = Employee.objects.filter(manager=user)
         workload_data = [
             {"name": e.name, "workload": e.current_workload, "title": e.title}
-             for e in employees
+            for e in employees
         ]
-        
+
         # 3. Assignment History (last 30 days) — scoped to this PM's tasks
         last_30_days = timezone.now() - timezone.timedelta(days=30)
         assignments = TaskAssignment.objects.filter(
-            assigned_at__gte=last_30_days,
-            task__created_by=user
+            assigned_at__gte=last_30_days, task__created_by=user
         ).count()
-        
-        return Response({
-            "task_stats": {
-                "total": total_tasks,
-                "completed": completed,
-                "assigned": assigned,
-                "completion_rate": round((completed / total_tasks * 100) if total_tasks else 0, 1)
-            },
-            "workload_distribution": workload_data,
-            "recent_assignments": assignments
-        })
+
+        return Response(
+            {
+                "task_stats": {
+                    "total": total_tasks,
+                    "completed": completed,
+                    "assigned": assigned,
+                    "completion_rate": round(
+                        (completed / total_tasks * 100) if total_tasks else 0, 1
+                    ),
+                },
+                "workload_distribution": workload_data,
+                "recent_assignments": assignments,
+            }
+        )
+
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     """Employee endpoints."""
+
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
 
     def get_queryset(self):
         """Filter employees based on user role."""
         user = self.request.user
-        queryset = Employee.objects.all()
+        queryset = Employee.objects.select_related("user", "manager").prefetch_related(
+            "skill_set"
+        )
 
         if user.role == "EMPLOYEE":
             # Employees can only see their own profile
@@ -212,7 +215,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if request.user.role != "PM":
             return Response(
                 {"message": "Only Project Managers can add employees"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         data = request.data
@@ -223,14 +226,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if not email or not name:
             return Response(
                 {"message": "Email and name are required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check if user exists
         if User.objects.filter(email=email).exists():
             return Response(
                 {"message": "User with this email already exists"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -240,26 +243,31 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 # Ensure unique username
                 if User.objects.filter(username=username).exists():
                     import uuid
+
                     username = f"{username}_{uuid.uuid4().hex[:4]}"
 
                 import secrets
                 import string
-                random_password = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+
+                random_password = "".join(
+                    secrets.choice(string.ascii_letters + string.digits)
+                    for _ in range(12)
+                )
                 user = User.objects.create_user(
                     username=username,
                     email=email,
                     password=random_password,
                     first_name=name.split(" ")[0],
                     last_name=" ".join(name.split(" ")[1:]) if " " in name else "",
-                    role="EMPLOYEE"
+                    role="EMPLOYEE",
                 )
 
                 # Create Employee
                 employee = Employee.objects.create(
                     user=user,
-                    manager=request.user, # Assign current PM as manager
+                    manager=request.user,  # Assign current PM as manager
                     title=title,
-                    email=email
+                    email=email,
                 )
 
                 # Add initial skills if provided
@@ -269,28 +277,31 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                         Skill.objects.create(
                             employee=employee,
                             name=skill_name,
-                            source="MANUAL", # Created via form (even if auto-filled)
-                            confidence_score=1.0
+                            source="MANUAL",  # Created via form (even if auto-filled)
+                            confidence_score=1.0,
                         )
 
                 serializer = self.get_serializer(employee)
-                AuditService.log(request.user, "CREATE", employee, f"Created employee {email}")
+                AuditService.log(
+                    request.user, "CREATE", employee, f"Created employee {email}"
+                )
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response(
-                {"message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_destroy(self, instance):
         """Delete employee and associated user."""
         if self.request.user.role != "PM":
-            raise exceptions.PermissionDenied("Only Project Managers can remove employees.")
+            raise exceptions.PermissionDenied(
+                "Only Project Managers can remove employees."
+            )
 
         user = instance.user
         instance.delete()
-        AuditService.log(self.request.user, "DELETE", instance, f"Deleted employee {user.email}")
+        AuditService.log(
+            self.request.user, "DELETE", instance, f"Deleted employee {user.email}"
+        )
         user.delete()
 
     @action(detail=False, methods=["post"], url_path="analyze")
@@ -301,73 +312,74 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         """
         if "file" not in request.FILES:
             return Response(
-                {"message": "No file provided"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         file = request.FILES["file"]
-        
+
         # Parse PDF
         parser = CVParser()
         is_pdf = parser.is_valid_pdf(file)
         is_docx = parser.is_valid_docx(file)
-        
+
         if not (is_pdf or is_docx):
-             return Response(
+            return Response(
                 {"message": "Only PDF and DOCX files are supported"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         # Read file
-        if hasattr(file, 'read'):
+        if hasattr(file, "read"):
             file_content = file.read()
             file.seek(0)
         else:
             file_content = file
-            
+
         try:
             extracted_text = ""
             if is_pdf:
                 extracted_text = parser.extract_text_from_pdf(file)
             elif is_docx:
                 extracted_text = parser.extract_text_from_docx(file)
-                
+
             if not extracted_text:
                 raise ValueError("Could not extract text")
-                
+
         except Exception as e:
-                return Response(
+            return Response(
                 {"message": f"Error parsing file: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         # Extract details using parser logic
         details = parser.extract_details(extracted_text)
-        
+
         # Fallback to AI prediction for role
         if not details["role"]:
             predicted_role = parser.predict_role_with_ai(extracted_text)
             if predicted_role:
                 details["role"] = predicted_role
-                
+
         # Basic Email Extraction
         import re
-        email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', extracted_text)
+
+        email_match = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", extracted_text)
         if email_match:
             details["email"] = email_match.group(0)
         else:
             details["email"] = ""
-            
+
         # Extract Skills
         try:
             from .services.skill_extractor import SkillExtractor
+
             extractor = SkillExtractor()
             skills_data = extractor.extract_skills(extracted_text)
             details["skills"] = [s["name"] for s in skills_data]
         except Exception as e:
             print(f"Error extracting skills in analyze_cv: {e}")
             details["skills"] = []
-            
+
         return Response(details)
 
     @action(detail=True, methods=["post"], url_path="cv")
@@ -377,28 +389,28 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         if "file" not in request.FILES:
             return Response(
-                {"message": "No file provided"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         file = request.FILES["file"]
 
         # Validate file type
-        if not (file.name.lower().endswith(".pdf") or file.name.lower().endswith(".docx")):
+        if not (
+            file.name.lower().endswith(".pdf") or file.name.lower().endswith(".docx")
+        ):
             return Response(
                 {"message": "Only PDF and DOCX files are supported"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate File Content
         parser = CVParser()
         is_pdf = parser.is_valid_pdf(file)
         is_docx = parser.is_valid_docx(file)
-        
+
         if not (is_pdf or is_docx):
             return Response(
-                {"message": "Invalid file content"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "Invalid file content"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # Create or update CV record
@@ -415,16 +427,16 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 with cv.file.open("rb") as f:
                     file_content = f.read()
                     f.seek(0)
-                    
+
                     # Determine type again or store it - simpler to re-check or check extension
                     # Since we validated on upload, we can check byte signature or just try both
                     # Or check extension from file name if available
-                    
+
                     extracted_text = None
-                    if cv.file.name.lower().endswith('.pdf') and parser.is_valid_pdf(f):
+                    if cv.file.name.lower().endswith(".pdf") and parser.is_valid_pdf(f):
                         f.seek(0)
                         extracted_text = parser.extract_text_from_pdf(f)
-                    elif cv.file.name.lower().endswith('.docx'):
+                    elif cv.file.name.lower().endswith(".docx"):
                         # is_valid_docx checks but we can just try extract
                         f.seek(0)
                         extracted_text = parser.extract_text_from_docx(f)
@@ -462,33 +474,41 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                             name=skill_name,
                             defaults={
                                 "source": "CV",
-                                "confidence_score": skill_data["confidence_score"]
-                            }
+                                "confidence_score": skill_data["confidence_score"],
+                            },
                         )
-                    
+
                     # Extract and update details
                     details = parser.extract_details(extracted_text)
-                    
+
                     # Fallback to AI prediction for role if heuristic failed
                     if not details["role"]:
                         predicted_role = parser.predict_role_with_ai(extracted_text)
                         if predicted_role:
                             details["role"] = predicted_role
-                    
+
                     # Update Title if found
-                    if details["role"] and (not employee.title or employee.title.startswith("New Employee")):
+                    if details["role"] and (
+                        not employee.title or employee.title.startswith("New Employee")
+                    ):
                         employee.title = details["role"]
                         employee.save()
-                    
+
                     # Update Name if found
                     if details["name"]:
                         user = employee.user
                         current_name = f"{user.first_name} {user.last_name}".strip()
                         # Only update if name looks generic or is just email
-                        if not current_name or "@" in current_name or current_name.lower().startswith("new user"):
+                        if (
+                            not current_name
+                            or "@" in current_name
+                            or current_name.lower().startswith("new user")
+                        ):
                             name_parts = details["name"].split()
                             user.first_name = name_parts[0]
-                            user.last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                            user.last_name = (
+                                " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                            )
                             user.save()
 
             except Exception as e:
@@ -500,10 +520,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         thread.daemon = True
         thread.start()
 
-        return Response({
-            "message": "CV uploaded and processing started",
-            "status": "PROCESSING"
-        })
+        return Response(
+            {"message": "CV uploaded and processing started", "status": "PROCESSING"}
+        )
 
     @action(detail=False, methods=["get"], url_path="my-profile")
     def get_my_profile(self, request):
@@ -513,66 +532,74 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if user.role != "EMPLOYEE":
             return Response(
                 {"message": "This endpoint is only for employees"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         employee = getattr(user, "employee_profile", None)
         if not employee:
             return Response(
                 {"message": "Employee profile not found"},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         employee_data = EmployeeSerializer(employee).data
 
-        assignments = TaskAssignment.objects.filter(
-            employee=employee,
-            status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
+        active_assignments = TaskAssignment.objects.filter(
+            employee=employee, status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
         ).select_related("task")
 
+        completed_assignments = TaskAssignment.objects.filter(
+            employee=employee, status="COMPLETED"
+        ).select_related("task").order_by("-completed_at")[:5]
+
         tasks_data = []
-        for assignment in assignments:
+        for assignment in list(active_assignments) + list(completed_assignments):
             task = assignment.task
-            tasks_data.append({
-                "id": str(task.id),
-                "title": task.title,
-                "status": assignment.status,
-                "priority": task.priority,
-                "suitability_score": assignment.suitability_score,
-                "due_date": task.due_date.isoformat() if task.due_date else None,
-            })
+            tasks_data.append(
+                {
+                    "id": str(task.id),
+                    "title": task.title,
+                    "description": task.description,
+                    "status": assignment.status,
+                    "priority": task.priority,
+                    "suitability_score": assignment.suitability_score,
+                    "due_date": task.due_date.isoformat() if task.due_date else None,
+                }
+            )
 
-        return Response({
-            "employee": employee_data,
-            "tasks": tasks_data,
-            "workload": employee.current_workload
-        })
-
+        return Response(
+            {
+                "employee": employee_data,
+                "tasks": tasks_data,
+                "workload": employee.current_workload,
+            }
+        )
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
     """Project endpoints."""
+
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
 
     def get_queryset(self):
         """Filter projects based on user role."""
         user = self.request.user
-        queryset = Project.objects.all()
+        queryset = Project.objects.select_related("manager")
 
         if user.role == "PM":
             # PMs see only their projects
             queryset = queryset.filter(manager=user)
         else:
-            # Employees - what should they see? All active projects? 
+            # Employees - what should they see? All active projects?
             # Or projects they have tasks in?
             # For now, let's say Employees see active projects to know what's going on.
-            if self.action == 'list':
-                queryset = queryset.filter(status='ACTIVE')
+            if self.action == "list":
+                queryset = queryset.filter(status="ACTIVE")
             else:
                 # Can only see details, not edit
                 pass
-        
+
         return queryset
 
     def perform_create(self, serializer):
@@ -582,6 +609,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 class TaskViewSet(viewsets.ModelViewSet):
     """Task endpoints."""
+
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     pagination_class = None  # Disable pagination for now, return all results
@@ -589,7 +617,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filter tasks based on user role."""
         user = self.request.user
-        queryset = Task.objects.all()
+        queryset = Task.objects.select_related(
+            "created_by", "project"
+        ).prefetch_related("task_skills")
 
         if user.role == "EMPLOYEE":
             employee = getattr(user, "employee_profile", None)
@@ -609,20 +639,20 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        
+
         AuditService.log(request.user, "CREATE", serializer.instance, "Created task")
-        
+
         # Get the created task instance
         task = serializer.instance
-        
+
         # Calculate matches
         engine = MatchingEngine()
         matches = engine.find_best_matches(task, limit=5, min_score=40.0)
-        
+
         # Serialize response
         response_data = serializer.data
         response_data["matches"] = matches
-        
+
         headers = self.get_success_headers(serializer.data)
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -635,47 +665,46 @@ class TaskViewSet(viewsets.ModelViewSet):
         """Analyze uploaded document to extract task details."""
         if "file" not in request.FILES:
             return Response(
-                {"message": "No file provided"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         file = request.FILES["file"]
-        
+
         # Parse PDF
         # Parse Document
-        parser = CVParser() # Valid for generic docs too
-        
+        parser = CVParser()  # Valid for generic docs too
+
         is_pdf = parser.is_valid_pdf(file)
         is_docx = parser.is_valid_docx(file)
-        
+
         extracted_text = None
-        
+
         if is_pdf:
-             extracted_text = parser.extract_text_from_pdf(file)
+            extracted_text = parser.extract_text_from_pdf(file)
         elif is_docx:
-             extracted_text = parser.extract_text_from_docx(file)
+            extracted_text = parser.extract_text_from_docx(file)
         else:
-             return Response(
+            return Response(
                 {"message": "Only PDF and DOCX files are supported"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         if not extracted_text:
-             return Response(
+            return Response(
                 {"message": "Could not extract text from document"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         # Extract details
         details = parser.extract_task_details(extracted_text)
-        
+
         # Extract Skills using SkillExtractor
         extractor = SkillExtractor()
         skills_data = extractor.extract_skills(extracted_text)
         details["requiredSkills"] = [
             extractor.normalize_skill_name(s["name"]) for s in skills_data
         ]
-        
+
         return Response(details)
 
     @action(detail=True, methods=["get"], url_path="matches")
@@ -698,39 +727,30 @@ class TaskViewSet(viewsets.ModelViewSet):
         if not employee_id:
             return Response(
                 {"message": "employee_id is required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             employee = Employee.objects.get(id=employee_id)
         except Employee.DoesNotExist:
             return Response(
-                {"message": "Employee not found"},
-                status=status.HTTP_404_NOT_FOUND
+                {"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
         engine = MatchingEngine()
-        score = engine.calculate_suitability_score(
-            employee,
-            task,
-            task.required_skills
-        )
+        score = engine.calculate_suitability_score(employee, task, task.required_skills)
 
         active_statuses = ["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
 
         with transaction.atomic():
             TaskAssignment.objects.filter(
-                task=task,
-                status__in=active_statuses
+                task=task, status__in=active_statuses
             ).exclude(employee=employee).update(status="CANCELLED")
 
             assignment, created = TaskAssignment.objects.get_or_create(
                 task=task,
                 employee=employee,
-                defaults={
-                    "suitability_score": score,
-                    "status": "ASSIGNED"
-                }
+                defaults={"suitability_score": score, "status": "ASSIGNED"},
             )
 
             if not created:
@@ -744,7 +764,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             task.status = "ASSIGNED"
             task.save()
 
-        AuditService.log(request.user, "ASSIGN", task, f"Assigned to {employee.name} with score {score}")
+        AuditService.log(
+            request.user,
+            "ASSIGN",
+            task,
+            f"Assigned to {employee.name} with score {score}",
+        )
 
         serializer = TaskAssignmentSerializer(assignment)
         return Response(serializer.data)
@@ -753,43 +778,42 @@ class TaskViewSet(viewsets.ModelViewSet):
     def unassign_task(self, request, pk=None):
         """Unassign task from current employee."""
         task = self.get_object()
-        
+
         with transaction.atomic():
             TaskAssignment.objects.filter(
-                task=task,
-                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
+                task=task, status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).update(status="CANCELLED")
-            
+
             task.status = "UNASSIGNED"
             task.save()
-            
+
         AuditService.log(request.user, "UPDATE", task, "Unassigned task")
-            
+
         return Response({"message": "Task unassigned successfully"})
-        
+
     @action(detail=True, methods=["post"], url_path="progress")
     def update_progress(self, request, pk=None):
         """Update task progress (Status and Notes) for Employee."""
         task = self.get_object()
         user = request.user
-        
+
         # Find assignment for this user
         try:
             employee = user.employee_profile
             assignment = TaskAssignment.objects.get(task=task, employee=employee)
         except (AttributeError, TaskAssignment.DoesNotExist):
-             return Response(
+            return Response(
                 {"message": "You are not assigned to this task"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
-            
+
         new_status = request.data.get("status")
         notes = request.data.get("notes")
-        
+
         if new_status:
             # Update assignment status
             assignment.status = new_status
-            
+
             # Sync to Task status if needed (simplified logic)
             if new_status == "COMPLETED":
                 task.status = "COMPLETED"
@@ -798,16 +822,16 @@ class TaskViewSet(viewsets.ModelViewSet):
                 task.status = "IN_PROGRESS"
                 if not assignment.started_at:
                     assignment.started_at = timezone.now()
-            
+
             task.save()
-            
+
         if notes is not None:
             assignment.notes = notes
-            
+
         assignment.save()
-        
+
         AuditService.log(user, "UPDATE", task, f"Updated progress: {new_status}")
-        
+
         return Response({"message": "Progress updated"})
 
     @action(detail=True, methods=["post"], url_path="rate-performance")
@@ -815,42 +839,50 @@ class TaskViewSet(viewsets.ModelViewSet):
         """Rate employee performance with detailed metrics for a completed task (PM only)."""
         task = self.get_object()
         user = request.user
-        
+
         if user.role != "PM":
             return Response(
                 {"message": "Only Project Managers can rate performance"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
-            
+
         data = request.data
-        
+
         try:
             quality = int(data.get("quality_rating", 0))
             timeliness = int(data.get("timeliness_rating", 0))
             communication = int(data.get("communication_rating", 0))
             technical = int(data.get("technical_rating", 0))
-            
+
             for r in [quality, timeliness, communication, technical]:
                 if r < 1 or r > 5:
                     raise ValueError("Ratings must be between 1 and 5")
-                    
+
         except (TypeError, ValueError) as e:
             return Response(
-                {"message": str(e) if str(e) else "Ratings must be valid integers between 1 and 5"},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    "message": (
+                        str(e)
+                        if str(e)
+                        else "Ratings must be valid integers between 1 and 5"
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         comments = data.get("performance_comments", "")
         overall_rating = (quality + timeliness + communication + technical) / 4.0
-            
+
         # Find the most recent active/completed assignment
-        assignment = TaskAssignment.objects.filter(task=task).order_by('-assigned_at').first()
+        assignment = (
+            TaskAssignment.objects.filter(task=task).order_by("-assigned_at").first()
+        )
         if not assignment:
             return Response(
                 {"message": "No assignment found for this task"},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
-            
+
         assignment.quality_rating = quality
         assignment.timeliness_rating = timeliness
         assignment.communication_rating = communication
@@ -858,13 +890,17 @@ class TaskViewSet(viewsets.ModelViewSet):
         assignment.performance_comments = comments
         assignment.performance_rating = overall_rating
         assignment.save()
-        
-        AuditService.log(user, "UPDATE", task, f"Rated performance detailed: {overall_rating}/5")
-        
-        return Response({
-            "message": "Performance rating saved successfully",
-            "performance_rating": overall_rating
-        })
+
+        AuditService.log(
+            user, "UPDATE", task, f"Rated performance detailed: {overall_rating}/5"
+        )
+
+        return Response(
+            {
+                "message": "Performance rating saved successfully",
+                "performance_rating": overall_rating,
+            }
+        )
 
 
 class DashboardView(APIView):
@@ -877,16 +913,17 @@ class DashboardView(APIView):
         if user.role == "EMPLOYEE":
             employee = getattr(user, "employee_profile", None)
             if not employee:
-                return Response({
-                    "active_tasks": 0,
-                    "unassigned_tasks": 0,
-                    "employee_capacity": 0,
-                    "skills_coverage": 0
-                })
+                return Response(
+                    {
+                        "active_tasks": 0,
+                        "unassigned_tasks": 0,
+                        "employee_capacity": 0,
+                        "skills_coverage": 0,
+                    }
+                )
 
             active_tasks = TaskAssignment.objects.filter(
-                employee=employee,
-                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
+                employee=employee, status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).count()
 
             capacity = employee.current_workload
@@ -895,18 +932,16 @@ class DashboardView(APIView):
                 "active_tasks": active_tasks,
                 "unassigned_tasks": 0,
                 "employee_capacity": round(capacity, 1),
-                "skills_coverage": 0
+                "skills_coverage": 0,
             }
         else:
             # Filter stats by PM's data
             active_tasks = Task.objects.filter(
-                created_by=user,
-                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
+                created_by=user, status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
             ).count()
 
             unassigned_tasks = Task.objects.filter(
-                created_by=user,
-                status="UNASSIGNED"
+                created_by=user, status="UNASSIGNED"
             ).count()
 
             employees = Employee.objects.filter(manager=user)
@@ -930,38 +965,39 @@ class DashboardView(APIView):
                 "active_tasks": active_tasks,
                 "unassigned_tasks": unassigned_tasks,
                 "employee_capacity": round(avg_capacity, 1),
-                "skills_coverage": round(skills_coverage, 1)
+                "skills_coverage": round(skills_coverage, 1),
             }
 
         serializer = DashboardStatsSerializer(data)
         return Response(serializer.data)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def debug_media(request):
     """Debug view to check media file existence."""
-    from django.conf import settings
     import os
-    
+
+    from django.conf import settings
+
     media_root = settings.MEDIA_ROOT
     media_url = settings.MEDIA_URL
-    path = request.GET.get('path', '')
-    
+    path = request.GET.get("path", "")
+
     exists = False
     full_path = ""
     folder_contents = []
-    
+
     if path:
         full_path = os.path.join(media_root, path)
         exists = os.path.exists(full_path)
-    
+
     # List media root contents
     try:
         if os.path.exists(media_root):
             folder_contents = os.listdir(media_root)
             # Check subfolders like 'cvs'
-            cvs_path = os.path.join(media_root, 'cvs')
+            cvs_path = os.path.join(media_root, "cvs")
             if os.path.exists(cvs_path):
                 folder_contents.extend([f"cvs/{f}" for f in os.listdir(cvs_path)])
         else:
@@ -969,57 +1005,73 @@ def debug_media(request):
     except Exception as e:
         folder_contents = [str(e)]
 
-    return Response({
-        "MEDIA_ROOT": media_root,
-        "MEDIA_URL": media_url,
-        "Requested Path": path,
-        "Full Path": full_path,
-        "Exists": exists,
-        "Folder Contents": folder_contents,
-        "DEBUG": settings.DEBUG,
-        "Service": "ITAS Backend API"
-    })
+    return Response(
+        {
+            "MEDIA_ROOT": media_root,
+            "MEDIA_URL": media_url,
+            "Requested Path": path,
+            "Full Path": full_path,
+            "Exists": exists,
+            "Folder Contents": folder_contents,
+            "DEBUG": settings.DEBUG,
+            "Service": "ITAS Backend API",
+        }
+    )
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def debug_email(request):
     """Debug view to test email sending."""
-    from django.core.mail import send_mail
     from django.conf import settings
-    
-    recipient = request.GET.get('recipient')
+    from django.core.mail import send_mail
+
+    recipient = request.GET.get("recipient")
     if not recipient:
         return Response(
             {"message": "Please provide 'recipient' query parameter"},
-            status=status.HTTP_400_BAD_REQUEST
+            status=status.HTTP_400_BAD_REQUEST,
         )
-        
+
     try:
         send_mail(
-             "Debug Email Test",
-             f"This is a test email sent from {settings.EMAIL_HOST}",
-             settings.DEFAULT_FROM_EMAIL,
-             [recipient],
-             fail_silently=False,
+            "Debug Email Test",
+            f"This is a test email sent from {settings.EMAIL_HOST}",
+            settings.DEFAULT_FROM_EMAIL,
+            [recipient],
+            fail_silently=False,
         )
-        return Response ({
-            "status": "SUCCESS", 
-            "message": f"Email sent to {recipient}",
-            "config": {
-                "HOST": settings.EMAIL_HOST,
-                "PORT": settings.EMAIL_PORT,
-                "USER": settings.EMAIL_HOST_USER[:3] + "***" if settings.EMAIL_HOST_USER else "NOT SET",
-                "TLS": settings.EMAIL_USE_TLS
+        return Response(
+            {
+                "status": "SUCCESS",
+                "message": f"Email sent to {recipient}",
+                "config": {
+                    "HOST": settings.EMAIL_HOST,
+                    "PORT": settings.EMAIL_PORT,
+                    "USER": (
+                        settings.EMAIL_HOST_USER[:3] + "***"
+                        if settings.EMAIL_HOST_USER
+                        else "NOT SET"
+                    ),
+                    "TLS": settings.EMAIL_USE_TLS,
+                },
             }
-        })
+        )
     except Exception as e:
-        return Response({
-            "status": "FAILED", 
-            "error": str(e),
-            "config": {
-                 "HOST": settings.EMAIL_HOST,
-                 "PORT": settings.EMAIL_PORT,
-                 "USER": settings.EMAIL_HOST_USER[:3] + "***" if settings.EMAIL_HOST_USER else "NOT SET",
-                 "TLS": settings.EMAIL_USE_TLS
-            }
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {
+                "status": "FAILED",
+                "error": str(e),
+                "config": {
+                    "HOST": settings.EMAIL_HOST,
+                    "PORT": settings.EMAIL_PORT,
+                    "USER": (
+                        settings.EMAIL_HOST_USER[:3] + "***"
+                        if settings.EMAIL_HOST_USER
+                        else "NOT SET"
+                    ),
+                    "TLS": settings.EMAIL_USE_TLS,
+                },
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

@@ -2,55 +2,170 @@
 Skill Extraction Service using curated patterns and section heuristics.
 Extracts technical skills from CV text using fast NLP-lite techniques.
 """
+
 import re
-from typing import List, Dict, Set, Optional, Pattern, Any
+from typing import Any, Dict, List, Optional, Pattern, Set
+
 
 class SkillExtractor:
     """Service for extracting skills from CV text using NLP-lite heuristics."""
 
     TECHNICAL_SKILLS: Set[str] = {
         # Programming Languages
-        'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'c', 'go', 'rust', 'kotlin',
-        'swift', 'php', 'ruby', 'scala', 'r', 'matlab', 'perl', 'shell', 'bash', 'powershell',
-        
+        "python",
+        "java",
+        "javascript",
+        "typescript",
+        "c++",
+        "c#",
+        "c",
+        "go",
+        "rust",
+        "kotlin",
+        "swift",
+        "php",
+        "ruby",
+        "scala",
+        "r",
+        "matlab",
+        "perl",
+        "shell",
+        "bash",
+        "powershell",
         # Web Technologies
-        'html', 'css', 'react', 'vue', 'angular', 'svelte', 'sveltekit', 'node.js', 'express',
-        'django', 'flask', 'fastapi', 'spring', 'laravel', 'asp.net', 'jquery', 'bootstrap',
-        'sass', 'less', 'webpack', 'vite', 'tailwind', 'redux', 'next.js', 'nuxt.js',
-        
+        "html",
+        "css",
+        "react",
+        "vue",
+        "angular",
+        "svelte",
+        "sveltekit",
+        "node.js",
+        "express",
+        "django",
+        "flask",
+        "fastapi",
+        "spring",
+        "laravel",
+        "asp.net",
+        "jquery",
+        "bootstrap",
+        "sass",
+        "less",
+        "webpack",
+        "vite",
+        "tailwind",
+        "redux",
+        "next.js",
+        "nuxt.js",
         # Databases
-        'sql', 'postgresql', 'mysql', 'mongodb', 'redis', 'oracle', 'sqlite', 'cassandra',
-        'elasticsearch', 'dynamodb', 'neo4j', 'snowflake', 'bigquery',
-        
+        "sql",
+        "postgresql",
+        "mysql",
+        "mongodb",
+        "redis",
+        "oracle",
+        "sqlite",
+        "cassandra",
+        "elasticsearch",
+        "dynamodb",
+        "neo4j",
+        "snowflake",
+        "bigquery",
         # Cloud & DevOps
-        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'git', 'ci/cd', 'terraform',
-        'ansible', 'linux', 'unix', 'nginx', 'apache', 'prometheus', 'grafana',
-        
+        "aws",
+        "azure",
+        "gcp",
+        "docker",
+        "kubernetes",
+        "jenkins",
+        "git",
+        "ci/cd",
+        "terraform",
+        "ansible",
+        "linux",
+        "unix",
+        "nginx",
+        "apache",
+        "prometheus",
+        "grafana",
         # Data Science & ML
-        'machine learning', 'deep learning', 'artificial intelligence', 'tensorflow', 'pytorch',
-        'scikit-learn', 'pandas', 'numpy', 'data analysis', 'data science', 'nlp',
-        'natural language processing', 'xgboost', 'lightgbm', 'spark', 'hadoop',
-        
+        "machine learning",
+        "deep learning",
+        "artificial intelligence",
+        "tensorflow",
+        "pytorch",
+        "scikit-learn",
+        "pandas",
+        "numpy",
+        "data analysis",
+        "data science",
+        "nlp",
+        "natural language processing",
+        "xgboost",
+        "lightgbm",
+        "spark",
+        "hadoop",
         # Tools & Frameworks
-        'github', 'gitlab', 'bitbucket', 'jira', 'confluence', 'slack', 'agile', 'scrum',
-        'kanban', 'figma', 'sketch', 'adobe', 'photoshop', 'illustrator', 'postman', 'swagger',
-        'openapi',
-        
+        "github",
+        "gitlab",
+        "bitbucket",
+        "jira",
+        "confluence",
+        "slack",
+        "agile",
+        "scrum",
+        "kanban",
+        "figma",
+        "sketch",
+        "adobe",
+        "photoshop",
+        "illustrator",
+        "postman",
+        "swagger",
+        "openapi",
         # Testing
-        'testing', 'unit testing', 'integration testing', 'test automation', 'selenium',
-        'jest', 'pytest', 'junit', 'cypress',
-
+        "testing",
+        "unit testing",
+        "integration testing",
+        "test automation",
+        "selenium",
+        "jest",
+        "pytest",
+        "junit",
+        "cypress",
         # Messaging & Streaming
-        'kafka', 'rabbitmq',
-        
+        "kafka",
+        "rabbitmq",
         # Mobile
-        'android', 'ios', 'react native', 'flutter', 'xamarin',
-        
+        "android",
+        "ios",
+        "react native",
+        "flutter",
+        "xamarin",
         # Other
-        'api', 'rest', 'graphql', 'microservices', 'devops', 'tdd', 'bdd', '.net',
-        'ux', 'ui', 'ui/ux', 'design', 'research', 'analytics', 'documentation',
-        'process mapping', 'stakeholder management', 'project management', 'leadership',
-        'mentoring', 'etl', 'data engineering',
+        "api",
+        "rest",
+        "graphql",
+        "microservices",
+        "devops",
+        "tdd",
+        "bdd",
+        ".net",
+        "ux",
+        "ui",
+        "ui/ux",
+        "design",
+        "research",
+        "analytics",
+        "documentation",
+        "process mapping",
+        "stakeholder management",
+        "project management",
+        "leadership",
+        "mentoring",
+        "etl",
+        "data engineering",
     }
 
     SKILL_ALIASES: Dict[str, str] = {
@@ -134,9 +249,19 @@ class SkillExtractor:
     }
 
     ACRONYMS: Set[str] = {
-        "api", "rest", "sql", "nlp", "ui", "ux", "qa", "aws", "gcp", "tdd", "bdd"
+        "api",
+        "rest",
+        "sql",
+        "nlp",
+        "ui",
+        "ux",
+        "qa",
+        "aws",
+        "gcp",
+        "tdd",
+        "bdd",
     }
-    
+
     # Class-level cache for compiled regex
     _skills_pattern: Optional[Pattern] = None
     _known_skill_keys: Optional[Set[str]] = None
@@ -144,37 +269,43 @@ class SkillExtractor:
     def __init__(self):
         # Initialize class-level attributes if not done yet
         if SkillExtractor._known_skill_keys is None:
-             SkillExtractor._known_skill_keys = set(self.TECHNICAL_SKILLS) | set(self.SKILL_ALIASES.values())
-        
+            SkillExtractor._known_skill_keys = set(self.TECHNICAL_SKILLS) | set(
+                self.SKILL_ALIASES.values()
+            )
+
         if SkillExtractor._skills_pattern is None:
             SkillExtractor._skills_pattern = self._build_skills_pattern()
-    
+
     @classmethod
     def _build_skills_pattern(cls) -> Pattern:
         """Build regex pattern for skill matching."""
         # Create pattern that matches skills (case-insensitive, custom boundaries)
         skills_list = sorted(
-            cls.TECHNICAL_SKILLS | set(cls.SKILL_ALIASES.keys()),
-            key=len,
-            reverse=True
+            cls.TECHNICAL_SKILLS | set(cls.SKILL_ALIASES.keys()), key=len, reverse=True
         )
-        pattern = r'(?<!\w)(' + '|'.join(re.escape(skill) for skill in skills_list) + r')(?!\w)'
+        pattern = (
+            r"(?<!\w)("
+            + "|".join(re.escape(skill) for skill in skills_list)
+            + r")(?!\w)"
+        )
         return re.compile(pattern, re.IGNORECASE)
-    
-    def extract_skills(self, text: str, min_confidence: float = 0.3) -> List[Dict[str, Any]]:
+
+    def extract_skills(
+        self, text: str, min_confidence: float = 0.3
+    ) -> List[Dict[str, Any]]:
         """
         Extract skills from CV text.
-        
+
         Args:
             text: CV text content
             min_confidence: Minimum confidence score to include skill
-            
+
         Returns:
             List of dictionaries with 'name' and 'confidence_score'
         """
         if not text:
             return []
-        
+
         text_lower = text.lower()
         found_skills: Dict[str, Dict[str, Any]] = {}
 
@@ -186,36 +317,35 @@ class SkillExtractor:
                 continue
             if skill_key not in found_skills:
                 found_skills[skill_key] = {
-                    'name': self.normalize_skill_name(skill_key),
-                    'confidence_score': 0.8,  # High confidence for direct matches
-                    'count': 0
+                    "name": self.normalize_skill_name(skill_key),
+                    "confidence_score": 0.8,  # High confidence for direct matches
+                    "count": 0,
                 }
-            found_skills[skill_key]['count'] += 1
-        
+            found_skills[skill_key]["count"] += 1
+
         # Method 2: Context-based extraction (look for skill sections)
         skill_sections = self._extract_skill_sections(text)
         for skill in skill_sections:
             skill_key = self.normalize_skill_key(skill)
             if not skill_key:
                 continue
-            
+
             # Check if it's a known skill to assign confidence
             is_known = skill_key in self._known_skill_keys
             base_confidence = 0.9 if is_known else 0.55
-            
+
             if skill_key not in found_skills:
                 found_skills[skill_key] = {
-                    'name': self.normalize_skill_name(skill_key),
-                    'confidence_score': base_confidence,
-                    'count': 1
+                    "name": self.normalize_skill_name(skill_key),
+                    "confidence_score": base_confidence,
+                    "count": 1,
                 }
             else:
-                found_skills[skill_key]['count'] += 1
-                found_skills[skill_key]['confidence_score'] = min(
-                    1.0,
-                    found_skills[skill_key]['confidence_score'] + 0.1
+                found_skills[skill_key]["count"] += 1
+                found_skills[skill_key]["confidence_score"] = min(
+                    1.0, found_skills[skill_key]["confidence_score"] + 0.1
                 )
-        
+
         # Method 3: N-gram analysis for compound skills
         compound_skills = self._extract_compound_skills(text)
         for skill in compound_skills:
@@ -224,100 +354,99 @@ class SkillExtractor:
                 continue
             if skill_key not in found_skills:
                 found_skills[skill_key] = {
-                    'name': self.normalize_skill_name(skill_key),
-                    'confidence_score': 0.6,
-                    'count': 1
+                    "name": self.normalize_skill_name(skill_key),
+                    "confidence_score": 0.6,
+                    "count": 1,
                 }
-        
+
         # Boost confidence for repeated mentions
         for skill_data in found_skills.values():
-            if skill_data['count'] > 1:
-                boost = min(0.15, 0.05 * (skill_data['count'] - 1))
-                skill_data['confidence_score'] = min(
-                    1.0,
-                    skill_data['confidence_score'] + boost
+            if skill_data["count"] > 1:
+                boost = min(0.15, 0.05 * (skill_data["count"] - 1))
+                skill_data["confidence_score"] = min(
+                    1.0, skill_data["confidence_score"] + boost
                 )
 
         # Filter by confidence and return
         result = [
             {
-                'name': skill_data['name'],
-                'confidence_score': min(1.0, skill_data['confidence_score'])
+                "name": skill_data["name"],
+                "confidence_score": min(1.0, skill_data["confidence_score"]),
             }
             for skill_data in found_skills.values()
-            if skill_data['confidence_score'] >= min_confidence
+            if skill_data["confidence_score"] >= min_confidence
         ]
-        
+
         # Sort by confidence score
-        result.sort(key=lambda x: x['confidence_score'], reverse=True)
-        
+        result.sort(key=lambda x: x["confidence_score"], reverse=True)
+
         return result
-    
+
     def _extract_skill_sections(self, text: str) -> List[str]:
         """Extract skills from dedicated skill sections in CV."""
         skills = []
-        
+
         # Common section headers
         skill_headers = [
-            r'skills?\s*:',
-            r'technical\s+skills?\s*:',
-            r'competencies?\s*:',
-            r'expertise\s*:',
-            r'technologies?\s*:',
-            r'tools?\s*:',
+            r"skills?\s*:",
+            r"technical\s+skills?\s*:",
+            r"competencies?\s*:",
+            r"expertise\s*:",
+            r"technologies?\s*:",
+            r"tools?\s*:",
         ]
-        
+
         for header_pattern in skill_headers:
             pattern = re.compile(header_pattern, re.IGNORECASE)
             matches = pattern.finditer(text)
-            
+
             for match in matches:
                 # Extract text after the header (next 500 chars or until next section)
                 start_pos = match.end()
-                section_text = text[start_pos:start_pos + 500]
-                
+                section_text = text[start_pos : start_pos + 500]
+
                 # Extract potential skills (words/phrases separated by commas, semicolons, or newlines)
-                skill_items = re.split(r'[,;\n•\|]', section_text)
+                skill_items = re.split(r"[,;\n•\|]", section_text)
                 for item in skill_items:
                     item = item.strip()
                     if item and len(item) > 2 and len(item) < 50:
                         # Check if it looks like a skill
                         if any(char.isalnum() for char in item):
                             skills.append(item)
-        
+
         deduped = list(dict.fromkeys(skills))
         return deduped[:25]
-    
+
     def _extract_compound_skills(self, text: str) -> List[str]:
         """Extract compound skills (multi-word phrases)."""
         compound_patterns = [
-            r'machine\s+learning',
-            r'deep\s+learning',
-            r'artificial\s+intelligence',
-            r'natural\s+language\s+processing',
-            r'data\s+science',
-            r'data\s+analysis',
-            r'data\s+engineering',
-            r'project\s+management',
-            r'stakeholder\s+management',
-            r'unit\s+testing',
-            r'integration\s+testing',
-            r'test\s+automation',
-            r'react\s+native',
-            r'node\.js',
-            r'next\.js',
-            r'nuxt\.js',
-            r'ci/cd',
-            r'ui\s*/\s*ux',
+            r"machine\s+learning",
+            r"deep\s+learning",
+            r"artificial\s+intelligence",
+            r"natural\s+language\s+processing",
+            r"data\s+science",
+            r"data\s+analysis",
+            r"data\s+engineering",
+            r"project\s+management",
+            r"stakeholder\s+management",
+            r"unit\s+testing",
+            r"integration\s+testing",
+            r"test\s+automation",
+            r"react\s+native",
+            r"node\.js",
+            r"next\.js",
+            r"nuxt\.js",
+            r"ci/cd",
+            r"ui\s*/\s*ux",
         ]
-        
+
         found = []
         text_lower = text.lower()
         for pattern in compound_patterns:
             matches = re.finditer(pattern, text_lower, re.IGNORECASE)
             for match in matches:
                 found.append(match.group())
-        
+
         return list(set(found))
 
     def normalize_skill_key(self, skill: str) -> str:
@@ -334,13 +463,13 @@ class SkillExtractor:
         key = re.sub(r"[_]+", " ", key)
         key = re.sub(r"\s+", " ", key).strip()
         key = key.replace(" / ", "/")
-        
+
         # Handle cases like "python3" -> "python"
         if key not in self._known_skill_keys:
-             # Try stripping version numbers if the skill isn't known
-             key_no_version = re.sub(r"\d+(\.\d+)*$", "", key).strip()
-             if key_no_version in self._known_skill_keys:
-                 key = key_no_version
+            # Try stripping version numbers if the skill isn't known
+            key_no_version = re.sub(r"\d+(\.\d+)*$", "", key).strip()
+            if key_no_version in self._known_skill_keys:
+                key = key_no_version
 
         return self.SKILL_ALIASES.get(key, key)
 

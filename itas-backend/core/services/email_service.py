@@ -1,6 +1,8 @@
-from django.core.mail import send_mail
 from django.conf import settings
-from core.models import Task, Employee, User
+from django.core.mail import send_mail
+
+from core.models import Employee, Task, User
+
 
 class EmailService:
     @staticmethod
@@ -29,7 +31,7 @@ class EmailService:
         Best regards,
         ITAS Team
         """
-        
+
         EmailService.send_email(subject, message, [employee.email])
 
     @staticmethod
@@ -53,14 +55,16 @@ class EmailService:
         Best regards,
         ITAS Team
         """
-        
+
         EmailService.send_email(subject, message, [pm.email])
 
     @staticmethod
     def send_email(subject, message, recipient_list):
         def _send():
             # DEBUG: Check config
-            print(f"DEBUG: EMAIL_HOST={settings.EMAIL_HOST}, USER={settings.EMAIL_HOST_USER}")
+            print(
+                f"DEBUG: EMAIL_HOST={settings.EMAIL_HOST}, USER={settings.EMAIL_HOST_USER}"
+            )
             try:
                 send_mail(
                     subject,
@@ -72,9 +76,10 @@ class EmailService:
                 print(f"Email sent to {recipient_list}: {subject}")
             except Exception as e:
                 print(f"Failed to send email: {e}")
-        
+
         # Run in a separate thread to avoid blocking
         import threading
+
         email_thread = threading.Thread(target=_send)
         email_thread.daemon = True
         email_thread.start()

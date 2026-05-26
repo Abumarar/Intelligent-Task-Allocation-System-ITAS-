@@ -302,12 +302,12 @@ export default function Employees() {
             <h2>{editingEmployee ? "Edit Employee" : "Add New Employee"}</h2>
 
             {!editingEmployee && (
-              <div className="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+              <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 rounded-xl flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-indigo-900">Auto-fill from CV</h4>
-                  <p className="text-xs text-indigo-700">Upload a resume to populate details.</p>
+                  <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-300">Auto-fill from CV</h4>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-400">Upload a resume to populate details.</p>
                 </div>
-                <label className={`btn btn-sm bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 ${analyzing ? "opacity-50" : "cursor-pointer"}`}>
+                <label className={`btn btn-sm bg-white dark:bg-slate-700 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-600 ${analyzing ? "opacity-50" : "cursor-pointer"}`}>
                   <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleAnalzyeCV} disabled={analyzing} />
                   {analyzing ? "Analyzing..." : "Upload CV"}
                 </label>
@@ -350,7 +350,7 @@ export default function Employees() {
                   onChange={e => setFormData({ ...formData, skills: e.target.value.split(",").map(s => s.trim()) })}
                   placeholder="e.g. React, Python, Leadership"
                 />
-                <p className="text-xs text-slate-500 mt-1">Auto-detected from CV. Edit as needed.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Auto-detected from CV. Edit as needed.</p>
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
@@ -414,7 +414,7 @@ export default function Employees() {
                         {skills.length > 8 && (
                           <button
                             type="button"
-                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline ml-1"
+                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium hover:underline ml-1"
                             onClick={() => setExpandedSkillsId(expandedSkillsId === employee.id ? null : employee.id)}
                           >
                             {expandedSkillsId === employee.id ? "Show less" : `+${skills.length - 8} more`}
@@ -433,13 +433,13 @@ export default function Employees() {
                 <div className="employee-workload">
                   <div className="muted">Workload</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="w-20 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${getWorkloadColor(employee.current_workload || 0)}`}
                         style={{ width: `${Math.min(employee.current_workload || 0, 100)}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                       {Math.round(employee.current_workload || 0)}%
                     </span>
                   </div>
@@ -511,19 +511,19 @@ export default function Employees() {
             <div className="space-y-3">
               {viewingTasksEmployee.assigned_tasks && viewingTasksEmployee.assigned_tasks.length > 0 ? (
                 viewingTasksEmployee.assigned_tasks.map(task => (
-                  <div key={task.id} className="p-3 bg-slate-50 border border-slate-100 rounded-lg flex justify-between items-center group hover:bg-white hover:shadow-sm transition-all">
+                  <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600 rounded-lg flex justify-between items-center group hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm transition-all">
                     <div>
-                      <div className="font-medium text-slate-800">{task.title}</div>
-                      <div className="text-xs text-slate-500 flex gap-2 mt-1">
-                        <span className={`px-1.5 py-0.5 rounded ${task.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                          task.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
-                            'bg-emerald-100 text-emerald-700'
+                      <div className="font-medium text-slate-800 dark:text-slate-200">{task.title}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex gap-2 mt-1">
+                        <span className={`px-1.5 py-0.5 rounded ${task.priority === 'HIGH' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400' :
+                          task.priority === 'MEDIUM' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400' :
+                            'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
                           }`}>{task.priority}</span>
                         <span>Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No date'}</span>
                       </div>
                     </div>
                     <button
-                      className="btn btn-sm border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                      className="btn btn-sm border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-300 dark:hover:border-red-700"
                       onClick={() => handleUnassignTask(task.id, viewingTasksEmployee.id)}
                       title="Unassign Task"
                     >
@@ -532,7 +532,7 @@ export default function Employees() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/30 rounded-lg">
                   No active tasks assigned.
                 </div>
               )}
@@ -549,7 +549,7 @@ export default function Employees() {
         <div className="modal-overlay">
           <div className="modal card" style={{ maxWidth: '400px' }}>
             <h3 className="text-lg font-bold">Confirm Deletion</h3>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-slate-600 dark:text-slate-400">
               Are you sure you want to remove <strong>{confirmDelete.name}</strong>?
               This action cannot be undone.
             </p>
@@ -561,7 +561,7 @@ export default function Employees() {
                 Cancel
               </button>
               <button
-                className="btn btn-danger bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                className="btn btn-danger bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/50"
                 onClick={executeDelete}
               >
                 Delete

@@ -1,6 +1,7 @@
-import kagglehub
 import os
 import shutil
+
+import kagglehub
 
 # Download latest version
 print("Downloading dataset...")
@@ -17,10 +18,10 @@ target_dir = os.getcwd()
 for file in files:
     source_file = os.path.join(path, file)
     target_file = os.path.join(target_dir, "dataset", file)
-    
+
     # Create dataset dir if not exists
     os.makedirs(os.path.join(target_dir, "dataset"), exist_ok=True)
-    
+
     if os.path.isfile(source_file):
         shutil.copy2(source_file, target_file)
         print(f"Copied file {file}")

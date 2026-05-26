@@ -1505,7 +1505,6 @@ textarea {
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* Card Actions Footer */
 .card-actions {
   display: flex;
   align-items: center;
@@ -1515,3 +1514,152 @@ textarea {
   border-top: 1px solid var(--line);
   flex-wrap: wrap;
 }
+
+/* ===== COMPREHENSIVE DARK MODE OVERRIDES ===== */
+
+/* Progress bar background */
+.dark .progress {
+  background: rgba(51, 65, 85, 0.6);
+}
+
+/* Auth card */
+.dark .auth-card {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+/* Auth panel gradient */
+.dark .auth-panel::before {
+  background: radial-gradient(420px 220px at 10% 10%, rgba(56, 189, 248, 0.15), transparent 70%),
+    radial-gradient(420px 220px at 90% 30%, rgba(74, 222, 128, 0.15), transparent 70%);
+}
+
+/* Highlight cards on login */
+.dark .highlight-card {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+/* Insight items */
+.dark .insight-item {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+/* Callout */
+.dark .callout {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+/* Check items */
+.dark .check-item {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+/* Tag chip in dark mode */
+.dark .tag-chip {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+
+.dark .tag-remove {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+/* Alert styles dark */
+.dark .alert {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: var(--line);
+}
+
+.dark .alert[data-tone="success"] {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+}
+
+.dark .alert[data-tone="error"] {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+}
+
+/* Empty state */
+.dark .empty-state {
+  color: var(--muted);
+}
+
+/* Stat card circle overlay in dark */
+.dark .stat-card::after {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.dark .stat-card.accent-teal::after {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.dark .stat-card.accent-sun::after {
+  background: rgba(74, 222, 128, 0.12);
+}
+
+.dark .stat-card.accent-clay::after {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+/* Modal overlay dark */
+.dark .modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Badge overrides for dark */
+.dark .badge.status-ready {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.dark .badge.status-processing {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.dark .badge.status-failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.dark .badge.status-missing {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.dark .badge.priority-high {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.dark .badge.priority-medium {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.dark .badge.priority-low {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+/* Generic badge in dark */
+.dark .badge {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: var(--line);
+  color: var(--muted);
+}

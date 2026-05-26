@@ -160,51 +160,51 @@ export default function TaskCreate() {
       <div className="page">
         <div className="max-w-3xl mx-auto w-full">
           <div className="mb-8 text-center">
-            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-950/40 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold mb-2">Task Created Successfully</h1>
-            <p className="text-slate-500">We found the best matches for this task based on skills and workload.</p>
+            <h1 className="text-2xl font-bold mb-2 dark:text-white">Task Created Successfully</h1>
+            <p className="text-slate-500 dark:text-slate-400">We found the best matches for this task based on skills and workload.</p>
           </div>
 
           <div className="card">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="font-semibold text-lg">Recommended Employees</h2>
-              <button onClick={clearForm} className="text-sm text-slate-500 hover:text-indigo-600 font-medium">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+              <h2 className="font-semibold text-lg dark:text-white">Recommended Employees</h2>
+              <button onClick={clearForm} className="text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium">
                 Skip & Create Another
               </button>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {matches.map(match => (
-                <div key={match.employee_id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div key={match.employee_id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center">
                       {match.employee_name.charAt(0)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-slate-900">{match.employee_name}</h3>
-                        <span className="text-xs text-slate-400">{match.employee_title}</span>
+                        <h3 className="font-semibold text-slate-900 dark:text-white">{match.employee_name}</h3>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{match.employee_title}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                        <div className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-2 py-0.5 rounded-full border border-green-100 dark:border-green-800">
                           {Math.round(match.suitability_score)}% Match
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-slate-400 dark:text-slate-500">
                           {100 - Math.round(match.current_workload)}% Available
                         </div>
                       </div>
                       {match.matching_skills.length > 0 && (
                         <div className="flex gap-1 mt-2">
                           {match.matching_skills.slice(0, 3).map(skill => (
-                            <span key={skill} className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                            <span key={skill} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded border border-slate-200 dark:border-slate-600">
                               {skill}
                             </span>
                           ))}
                           {match.matching_skills.length > 3 && (
-                            <span className="text-[10px] text-slate-400 self-center">+{match.matching_skills.length - 3}</span>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 self-center">+{match.matching_skills.length - 3}</span>
                           )}
                         </div>
                       )}
@@ -236,19 +236,19 @@ export default function TaskCreate() {
           </p>
         </div>
 
-        <div className="card px-4 py-3 bg-indigo-50 border border-indigo-100 flex items-center justify-between shadow-sm">
+        <div className="card px-4 py-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-indigo-900">Have a job description?</h3>
-              <p className="text-xs text-indigo-700">Upload a PDF to auto-fill details.</p>
+              <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">Have a job description?</h3>
+              <p className="text-xs text-indigo-700 dark:text-indigo-400">Upload a PDF to auto-fill details.</p>
             </div>
           </div>
-          <label className={`btn btn-sm bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 shadow-sm ${analyzing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label className={`btn btn-sm bg-white dark:bg-slate-700 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm ${analyzing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <input
               type="file"
               accept=".pdf,.docx"

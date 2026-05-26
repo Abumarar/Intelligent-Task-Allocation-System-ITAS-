@@ -1,11 +1,12 @@
 from core.models import AuditLog
 
+
 class AuditService:
     @staticmethod
     def log(user, action, target, details=None, ip_address=None):
         """
         Log an action to the audit log.
-        
+
         Args:
             user: User performing the action
             action: Action type (CREATE, UPDATE, DELETE, etc.)
@@ -26,5 +27,5 @@ class AuditService:
             target_model=target_model,
             target_id=target_id,
             details=details,
-            ip_address=ip_address
+            ip_address=ip_address,
         )

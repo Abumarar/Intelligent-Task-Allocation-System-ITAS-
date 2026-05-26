@@ -182,16 +182,29 @@ export default function MyProfile() {
           <div className="task-list">
             {tasks.length > 0 ? (
               tasks.map((task) => (
-                <div key={task.id} className="task-item">
-                  <div>
-                    <div className="task-title">{task.title}</div>
-                    <div className="task-meta">
-                      {task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : "No due date"}
+                <div key={task.id} className="task-item flex flex-col items-start gap-2 bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800">
+                  <div className="flex justify-between items-start w-full mb-1">
+                    <div className="task-title text-lg font-bold text-slate-800 dark:text-white leading-tight">
+                        {task.title}
                     </div>
+                    <span 
+                      className={`badge cursor-pointer hover:bg-opacity-80 ml-3 shrink-0 uppercase text-[10px] tracking-wider px-2 py-1 ${task.status === 'COMPLETED' ? 'status-success' : task.status === 'BLOCKED' ? 'status-error' : 'status-processing'}`} 
+                      onClick={() => openTaskUpdate(task)}
+                    >
+                      {task.status.replace("_", " ")}
+                    </span>
                   </div>
-                  <span className="badge status-processing cursor-pointer hover:bg-opacity-80" onClick={() => openTaskUpdate(task)}>
-                    {task.status}
-                  </span>
+                  
+                  <div className="task-desc text-sm text-slate-600 dark:text-slate-300 w-full mb-2">
+                    {task.description || "No description provided."}
+                  </div>
+                  
+                  <div className="task-meta flex items-center gap-2 mt-auto pt-2 w-full border-t border-slate-100 dark:border-slate-700/50 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <svg className="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}` : "No due date"}
+                  </div>
                 </div>
               ))
             ) : (
@@ -230,12 +243,12 @@ export default function MyProfile() {
               {uploading ? "Uploading..." : "Upload New CV"}
             </label>
             {uploadMsg && (
-              <div className={`mt-3 text-sm ${uploadMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`mt-3 text-sm ${uploadMsg.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {uploadMsg.text}
               </div>
             )}
             {profileData?.employee?.cvUpdatedAt && (
-              <div className="mt-2 text-xs text-center text-slate-400">
+              <div className="mt-2 text-xs text-center text-slate-400 dark:text-slate-500">
                 Last updated: {new Date(profileData.employee.cvUpdatedAt).toLocaleDateString()}
               </div>
             )}

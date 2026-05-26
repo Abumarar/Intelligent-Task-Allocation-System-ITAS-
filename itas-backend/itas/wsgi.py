@@ -6,6 +6,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'itas.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "itas.settings.development")
 
 application = get_wsgi_application()

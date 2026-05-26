@@ -53,7 +53,7 @@ export default function AppShell({ nav }: { nav: NavItem[] }) {
           </div>
           {/* Mobile Close Button */}
           <button
-            className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
+            className="lg:hidden p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

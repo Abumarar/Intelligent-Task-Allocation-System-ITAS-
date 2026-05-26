@@ -77,9 +77,9 @@ export default function Projects() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "ACTIVE": return "bg-emerald-100 text-emerald-700 border-emerald-200";
-            case "COMPLETED": return "bg-blue-100 text-blue-700 border-blue-200";
-            default: return "bg-slate-100 text-slate-700 border-slate-200";
+            case "ACTIVE": return "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
+            case "COMPLETED": return "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+            default: return "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600";
         }
     };
 
@@ -88,7 +88,7 @@ export default function Projects() {
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
-                    <p className="text-slate-500 font-medium animate-pulse">Loading projects...</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">Loading projects...</p>
                 </div>
             </div>
         );
@@ -148,7 +148,7 @@ export default function Projects() {
                                     <div className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider uppercase border ${getStatusColor(project.status)}`}>
                                         {project.status}
                                     </div>
-                                    <span className="text-xs text-slate-400">
+                                    <span className="text-xs text-slate-400 dark:text-slate-500">
                                         {new Date(project.updated_at).toLocaleDateString()}
                                     </span>
                                 </div>
@@ -157,7 +157,7 @@ export default function Projects() {
                                     {project.title}
                                 </h3>
 
-                                <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 mb-6 flex-1">
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 flex-1">
                                     {project.description || "No description provided."}
                                 </p>
 

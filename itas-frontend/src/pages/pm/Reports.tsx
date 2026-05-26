@@ -78,7 +78,7 @@ export default function Reports() {
                             {reports.workload_distribution.map((emp) => (
                                 <tr key={emp.name}>
                                     <td>
-                                        <div className="font-bold">{emp.name}</div>
+                                        <div className="font-bold dark:text-white">{emp.name}</div>
                                     </td>
                                     <td>{emp.title || "N/A"}</td>
                                     <td>

@@ -1,16 +1,17 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.utils import timezone
 
 
 class User(AbstractUser):
     """Custom user model with role-based access."""
+
     ROLE_CHOICES = [
-        ('PM', 'Project Manager'),
-        ('EMPLOYEE', 'Employee'),
+        ("PM", "Project Manager"),
+        ("EMPLOYEE", "Employee"),
     ]
-    
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='EMPLOYEE')
+
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="EMPLOYEE")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -20,15 +21,24 @@ class User(AbstractUser):
 
 class Employee(models.Model):
     """Employee profile with CV and skill information."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employee_profile')
-    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_employees')
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="employee_profile"
+    )
+    manager = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="managed_employees",
+    )
     title = models.CharField(max_length=200, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.title or 'Employee'}"
@@ -40,13 +50,13 @@ class Employee(models.Model):
     @property
     def skills(self):
         """Get all skills associated with this employee."""
-        return list(self.skill_set.values_list('name', flat=True))
+        return list(self.skill_set.values_list("name", flat=True))
 
     @property
     def current_workload(self):
         """Calculate current workload as percentage of capacity."""
         active_tasks = self.taskassignment_set.filter(
-            status__in=['ASSIGNED', 'IN_PROGRESS', 'BLOCKED']
+            status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
         ).count()
         # Assuming max capacity of 5 active tasks = 100%
         max_capacity = 5
@@ -56,56 +66,62 @@ class Employee(models.Model):
     def average_performance(self):
         """Calculate average performance rating from completed tasks."""
         completed_assignments = self.taskassignment_set.filter(
-            status='COMPLETED', 
-            performance_rating__isnull=False
+            status="COMPLETED", performance_rating__isnull=False
         )
         if not completed_assignments.exists():
             return None
-        return completed_assignments.aggregate(
-            models.Avg('performance_rating')
-        )['performance_rating__avg']
+        return completed_assignments.aggregate(models.Avg("performance_rating"))[
+            "performance_rating__avg"
+        ]
 
 
 class CV(models.Model):
     """CV/Portfolio document uploaded by employee."""
+
     STATUS_CHOICES = [
-        ('NOT_UPLOADED', 'Not Uploaded'),
-        ('PROCESSING', 'Processing'),
-        ('READY', 'Ready'),
-        ('FAILED', 'Failed'),
+        ("NOT_UPLOADED", "Not Uploaded"),
+        ("PROCESSING", "Processing"),
+        ("READY", "Ready"),
+        ("FAILED", "Failed"),
     ]
 
-    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, related_name='cv')
-    file = models.FileField(upload_to='cvs/')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NOT_UPLOADED')
+    employee = models.OneToOneField(
+        Employee, on_delete=models.CASCADE, related_name="cv"
+    )
+    file = models.FileField(upload_to="cvs/")
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="NOT_UPLOADED", db_index=True
+    )
     extracted_text = models.TextField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(blank=True, null=True)
     error_message = models.TextField(blank=True, null=True)
 
     class Meta:
-        ordering = ['-uploaded_at']
+        ordering = ["-uploaded_at"]
 
     def __str__(self):
         return f"CV for {self.employee.name} - {self.status}"
 
 
-
 class Skill(models.Model):
     """Skills extracted from CVs or manually added."""
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     source = models.CharField(
         max_length=20,
-        choices=[('CV', 'CV'), ('MANUAL', 'Manual'), ('PORTFOLIO', 'Portfolio')],
-        default='CV'
+        choices=[("CV", "CV"), ("MANUAL", "Manual"), ("PORTFOLIO", "Portfolio")],
+        default="CV",
     )
-    confidence_score = models.FloatField(default=0.0, help_text="Confidence score from NLP extraction")
+    confidence_score = models.FloatField(
+        default=0.0, help_text="Confidence score from NLP extraction"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['employee', 'name']
-        ordering = ['-confidence_score', 'name']
+        unique_together = ["employee", "name"]
+        ordering = ["-confidence_score", "name"]
 
     def __str__(self):
         return f"{self.employee.name} - {self.name}"
@@ -113,19 +129,27 @@ class Skill(models.Model):
 
 class Project(models.Model):
     """A collection of tasks managed by a PM."""
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects')
-    status = models.CharField(max_length=20, default='ACTIVE', choices=[
-        ('ACTIVE', 'Active'),
-        ('COMPLETED', 'Completed'),
-        ('ARCHIVED', 'Archived')
-    ])
+    manager = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="managed_projects"
+    )
+    status = models.CharField(
+        max_length=20,
+        default="ACTIVE",
+        choices=[
+            ("ACTIVE", "Active"),
+            ("COMPLETED", "Completed"),
+            ("ARCHIVED", "Archived"),
+        ],
+        db_index=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-updated_at']
+        ordering = ["-updated_at"]
 
     def __str__(self):
         return self.title
@@ -133,35 +157,44 @@ class Project(models.Model):
 
 class Task(models.Model):
     """Task definition with requirements and skill needs."""
+
     PRIORITY_CHOICES = [
-        ('LOW', 'Low'),
-        ('MEDIUM', 'Medium'),
-        ('HIGH', 'High'),
+        ("LOW", "Low"),
+        ("MEDIUM", "Medium"),
+        ("HIGH", "High"),
     ]
 
     STATUS_CHOICES = [
-        ('DRAFT', 'Draft'),
-        ('UNASSIGNED', 'Unassigned'),
-        ('ASSIGNED', 'Assigned'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('BLOCKED', 'Blocked'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
+        ("DRAFT", "Draft"),
+        ("UNASSIGNED", "Unassigned"),
+        ("ASSIGNED", "Assigned"),
+        ("IN_PROGRESS", "In Progress"),
+        ("BLOCKED", "Blocked"),
+        ("COMPLETED", "Completed"),
+        ("CANCELLED", "Cancelled"),
     ]
 
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True, null=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
+    priority = models.CharField(
+        max_length=10, choices=PRIORITY_CHOICES, default="MEDIUM"
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="DRAFT", db_index=True
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_tasks"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     start_date = models.DateTimeField(blank=True, null=True)
     due_date = models.DateTimeField(blank=True, null=True)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True
+    )
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.title} ({self.priority})"
@@ -169,16 +202,17 @@ class Task(models.Model):
     @property
     def required_skills(self):
         """Get all required skills for this task."""
-        return list(self.task_skills.values_list('skill_name', flat=True))
+        return list(self.task_skills.values_list("skill_name", flat=True))
 
 
 class TaskSkill(models.Model):
     """Required skills for a task."""
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_skills')
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="task_skills")
     skill_name = models.CharField(max_length=100)
 
     class Meta:
-        unique_together = ['task', 'skill_name']
+        unique_together = ["task", "skill_name"]
 
     def __str__(self):
         return f"{self.task.title} requires {self.skill_name}"
@@ -186,51 +220,62 @@ class TaskSkill(models.Model):
 
 class TaskAssignment(models.Model):
     """Assignment of task to employee with suitability score."""
+
     STATUS_CHOICES = [
-        ('ASSIGNED', 'Assigned'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('BLOCKED', 'Blocked'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
+        ("ASSIGNED", "Assigned"),
+        ("IN_PROGRESS", "In Progress"),
+        ("BLOCKED", "Blocked"),
+        ("COMPLETED", "Completed"),
+        ("CANCELLED", "Cancelled"),
     ]
 
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='assignments')
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='taskassignment_set')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="assignments")
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="taskassignment_set"
+    )
     suitability_score = models.FloatField(
         help_text="Score from 0-100 indicating how well employee matches task requirements"
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="ASSIGNED", db_index=True
+    )
     assigned_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True, help_text="Employee progress notes")
     performance_rating = models.FloatField(
-        null=True, blank=True,
-        help_text="Overall PM rating of employee performance (calculated average)"
+        null=True,
+        blank=True,
+        help_text="Overall PM rating of employee performance (calculated average)",
     )
     quality_rating = models.IntegerField(null=True, blank=True)
     timeliness_rating = models.IntegerField(null=True, blank=True)
     communication_rating = models.IntegerField(null=True, blank=True)
     technical_rating = models.IntegerField(null=True, blank=True)
-    performance_comments = models.TextField(blank=True, null=True, help_text="Detailed PM feedback")
+    performance_comments = models.TextField(
+        blank=True, null=True, help_text="Detailed PM feedback"
+    )
 
     class Meta:
-        unique_together = ['task', 'employee']
-        ordering = ['-suitability_score']
+        unique_together = ["task", "employee"]
+        ordering = ["-suitability_score"]
 
     def __str__(self):
-        return f"{self.task.title} -> {self.employee.name} ({self.suitability_score:.1f}%)"
+        return (
+            f"{self.task.title} -> {self.employee.name} ({self.suitability_score:.1f}%)"
+        )
 
 
 class AuditLog(models.Model):
     """Log of critical system actions."""
+
     ACTION_CHOICES = [
-        ('CREATE', 'Create'),
-        ('UPDATE', 'Update'),
-        ('DELETE', 'Delete'),
-        ('LOGIN', 'Login'),
-        ('LOGOUT', 'Logout'),
-        ('ASSIGN', 'Assign'),
+        ("CREATE", "Create"),
+        ("UPDATE", "Update"),
+        ("DELETE", "Delete"),
+        ("LOGIN", "Login"),
+        ("LOGOUT", "Logout"),
+        ("ASSIGN", "Assign"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -242,7 +287,7 @@ class AuditLog(models.Model):
     ip_address = models.GenericIPAddressField(blank=True, null=True)
 
     class Meta:
-        ordering = ['-timestamp']
+        ordering = ["-timestamp"]
 
     def __str__(self):
         return f"{self.timestamp} - {self.user} - {self.action} {self.target_model}"

@@ -2,9 +2,9 @@
 Shared text preprocessing for resume classification.
 Keeps key tech tokens while normalizing noisy input.
 """
+
 import re
 import unicodedata
-
 
 TOKEN_REPLACEMENTS = {
     "c++": "cplusplus",
