@@ -1,8 +1,7 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getPerformanceProfile } from '../../api/employees';
 import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
+  ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip
 } from 'recharts';
 
@@ -35,12 +34,6 @@ export default function PerformanceProfileModal({ employeeId, onClose }: { emplo
   }
 
   const { metrics, task_history, employee_name } = data;
-
-  const radarData = Object.entries(metrics.weighted_average_skill_score || {}).map(([skill, score]) => ({
-    subject: skill,
-    A: score,
-    fullMark: 5,
-  }));
 
   const timelineData = [...task_history].reverse().map(task => ({
     name: task.task_title.substring(0, 15) + "...",
