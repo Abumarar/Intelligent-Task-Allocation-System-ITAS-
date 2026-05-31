@@ -19,17 +19,21 @@ ITAS is an enterprise-grade, web-based system designed to optimize software deve
 
 ## 📸 Screenshots
 
-| Dashboard | System Reports |
+| View 1 | View 2 |
 |:---:|:---:|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Reports](docs/screenshots/reports.png) |
+| ![Screenshot 1](docs/screenshots/Screenshot_2026-05-31_20-38-59.jpg) | ![Screenshot 2](docs/screenshots/Screenshot_2026-05-31_20-39-23.jpg) |
 
-| Projects Portfolio | Employee Management |
+| View 3 | View 4 |
 |:---:|:---:|
-| ![Projects](docs/screenshots/projects.png) | ![Employees](docs/screenshots/employees.png) |
+| ![Screenshot 3](docs/screenshots/Screenshot_2026-05-31_20-39-46.jpg) | ![Screenshot 4](docs/screenshots/Screenshot_2026-05-31_20-40-12.jpg) |
 
-| Employee Profile | Settings & Configurations |
+| View 5 | View 6 |
 |:---:|:---:|
-| ![Employee Profile](docs/screenshots/employee_dashboard.png) | ![Settings](docs/screenshots/settings.png) |
+| ![Screenshot 5](docs/screenshots/Screenshot_2026-05-31_20-40-36.jpg) | ![Screenshot 6](docs/screenshots/Screenshot_2026-05-31_20-40-48.jpg) |
+
+<p align="center">
+  <img src="docs/screenshots/Screenshot_2026-05-31_20-42-49.jpg" width="48%">
+</p>
 
 ---
 
