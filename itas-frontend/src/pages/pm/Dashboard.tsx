@@ -1,8 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../auth/hooks";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchDashboardStats } from "../../api/dashboard";
-import { fetchTasks as fetchTasksList, type Task, type TaskMatch } from "../../api/tasks";
+import { fetchTasks as fetchTasksList, getTaskMatches, assignTask, type Task, type TaskMatch } from "../../api/tasks";
 
 const insights = [
   "Two tasks waiting on scope clarity from stakeholders.",
@@ -18,6 +18,15 @@ const priorityClass = (priority: string) => {
 
 export default function PMDashboard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const assignMutation = useMutation({
+    mutationFn: ({ taskId, employeeId }: { taskId: string; employeeId: string }) => assignTask(taskId, employeeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+  });
 
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -65,7 +74,22 @@ export default function PMDashboard() {
       { label: "On-time risk", value: "0%", meta: "Loading...", progress: 0 },
     ];
 
-  const matches: TaskMatch[] = []; // Will be populated when tasks have matches
+  const unassignedTasks = tasksData ? tasksData.filter((t: Task) => t.status === "UNASSIGNED" || t.status === "DRAFT").slice(0, 3) : [];
+
+  const { data: matchesData, isLoading: matchesLoading } = useQuery({
+    queryKey: ["dashboard-matches", unassignedTasks.map((t: Task) => t.id)],
+    queryFn: async () => {
+      const results = [];
+      for (const task of unassignedTasks) {
+        const taskMatches = await getTaskMatches(task.id);
+        if (taskMatches.length > 0) {
+          results.push({ task, matches: taskMatches.slice(0, 5) });
+        }
+      }
+      return results;
+    },
+    enabled: unassignedTasks.length > 0,
+  });
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -194,26 +218,43 @@ export default function PMDashboard() {
             <span className="badge status-ready">Live</span>
           </div>
           <div className="match-list">
-            {matches.length > 0 ? (
-              matches.map((match) => (
-                <div key={match.employee_id} className="match-item">
-                  <div>
-                    <div className="match-name">{match.employee_name}</div>
-                    <div className="match-meta">
-                      {match.employee_title} - {Math.round(match.suitability_score)}%
+            {matchesData && matchesData.length > 0 ? (
+              matchesData.map(({ task, matches }) => (
+                <div key={task.id} style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+                  <div className="task-title" style={{ fontSize: "0.9rem", color: "var(--muted)", margin: 0 }}>For: {task.title}</div>
+                  {matches.map((match: TaskMatch) => (
+                    <div key={match.employee_id} className="match-item">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div className="match-name">{match.employee_name}</div>
+                          <div className="match-meta">
+                            {match.employee_title} - {Math.round(match.suitability_score)}% fit
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => assignMutation.mutate({ taskId: task.id, employeeId: match.employee_id })}
+                          disabled={assignMutation.isPending}
+                          className="btn btn-outline"
+                          style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '8px' }}
+                        >
+                          {assignMutation.isPending ? 'Assigning...' : 'Assign'}
+                        </button>
+                      </div>
+                      <div className="tag-list">
+                        {match.matching_skills.map((skill) => (
+                          <span key={skill} className="tag">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="tag-list">
-                    {match.matching_skills.map((skill) => (
-                      <span key={skill} className="tag">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               ))
             ) : (
-              <div className="muted">No matches available. Create tasks to see recommendations.</div>
+              <div className="muted">
+                {matchesLoading ? "Loading recommendations..." : "No matches available. Create tasks to see recommendations."}
+              </div>
             )}
           </div>
         </section>

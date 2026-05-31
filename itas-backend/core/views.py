@@ -941,7 +941,7 @@ class DashboardView(APIView):
             ).count()
 
             unassigned_tasks = Task.objects.filter(
-                created_by=user, status="UNASSIGNED"
+                created_by=user, status__in=["UNASSIGNED", "DRAFT"]
             ).count()
 
             employees = Employee.objects.filter(manager=user)
