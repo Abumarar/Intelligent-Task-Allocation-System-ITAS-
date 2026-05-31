@@ -10,15 +10,36 @@
 ## Project Overview
 ITAS is an enterprise-grade, web-based system designed to optimize software development task allocation within IT projects. It leverages AI-driven matching algorithms, Natural Language Processing (NLP) for CV analysis, and historical performance tracking to ensure data-driven, unbiased task assignments.
 
+### 🌟 Recent Major Features
+*   **Performance Task History Profile:** A dynamic, data-driven profile for each employee that tracks granular task-level execution. Project Managers can rate specific skills (1-5 scale) used in a task upon completion.
+*   **Dynamic AI Matching Decay:** The AI Matching Engine no longer relies purely on static CV data. It dynamically adjusts employee skill profiles based on proven historical task evaluations, penalizing inconsistency and weighting recent tasks higher using an exponential time-decay function.
+*   **Interactive Visual Analytics:** Integrated `recharts` to provide Project Managers with massive, interactive visualization modals featuring Skill Usage History, Rating Progress Bars, and chronological Performance Evolution line charts.
+
+---
+
+## 📸 Screenshots
+
+| Dashboard | System Reports |
+|:---:|:---:|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Reports](docs/screenshots/reports.png) |
+
+| Projects Portfolio | Employee Management |
+|:---:|:---:|
+| ![Projects](docs/screenshots/projects.png) | ![Employees](docs/screenshots/employees.png) |
+
+| Employee Profile | Settings & Configurations |
+|:---:|:---:|
+| ![Employee Profile](docs/screenshots/employee_dashboard.png) | ![Settings](docs/screenshots/settings.png) |
+
 ---
 
 ## 🏛️ Architecture Overview
 
 The system is built on a modern decoupled architecture:
 
-*   **Frontend (Client Layer):** A responsive, single-page application built with React, TypeScript, and Vite. State is managed via Context API, and data fetching is optimized using React Query. Styling is handled via Tailwind CSS.
-*   **Backend (API Layer):** A RESTful API built with Django and Django REST Framework (DRF). It handles business logic, JWT authentication, role-based access control (RBAC), and AI integrations.
-*   **AI/ML Engine:** An embedded scikit-learn pipeline used to classify tasks, predict roles based on CV content, and calculate suitability scores by matching task requirements against employee skillsets.
+*   **Frontend (Client Layer):** A responsive, single-page application built with React, TypeScript, and Vite. State is managed via Context API, and data fetching is optimized using React Query. Styling is handled via Tailwind CSS, and advanced data visualization is powered by `recharts`.
+*   **Backend (API Layer):** A RESTful API built with Django and Django REST Framework (DRF). It handles business logic, JWT authentication, role-based access control (RBAC), atomic database transactions, and AI integrations.
+*   **AI/ML Engine:** An embedded scikit-learn pipeline used to classify tasks, predict roles based on CV content, and calculate suitability scores by dynamically fusing task requirements, parsed CV skillsets, and granular real-world historical performance evaluations.
 *   **Database:** PostgreSQL (with SQLite fallback for local dev) serving as the primary relational store. Redis is used for caching in production.
 
 ---
@@ -87,12 +108,14 @@ The backend exposes a secure REST API. All endpoints (except login) require a Be
 *   `GET /api/projects/` - List projects (Scoped by role).
 *   `GET /api/tasks/` - List tasks.
 *   `POST /api/tasks/` - Create a new task and trigger AI matching.
+*   `POST /api/tasks/{id}/rate-performance/` - PM endpoint to submit overall task ratings and granular per-skill evaluations.
 *   `GET /api/employees/` - List employees.
+*   `GET /api/employees/{id}/performance-profile/` - Fetch aggregated skill analytics, task history, and progression metrics.
 *   `POST /api/employees/` - Create a new employee (PM only).
 
 ### AI & Operations
 *   `POST /api/employees/analyze/` - Upload a CV (PDF/Docx) to extract skills and predict roles.
-*   `GET /api/tasks/{id}/matches/` - Get AI-recommended employee matches for a task.
+*   `GET /api/tasks/{id}/matches/` - Get AI-recommended employee matches factoring in historical performance.
 *   `POST /api/tasks/{id}/assign/` - Assign a task to an employee.
 
 ---
