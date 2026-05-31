@@ -6,6 +6,7 @@
 ![Tech Stack](https://img.shields.io/badge/tech-Python%2C%20Django%2C%20React%2C%20TypeScript-blue)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-blue)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Project Overview
 ITAS is an enterprise-grade, web-based system designed to optimize software development task allocation within IT projects. It leverages AI-driven matching algorithms, Natural Language Processing (NLP) for CV analysis, and historical performance tracking to ensure data-driven, unbiased task assignments.
