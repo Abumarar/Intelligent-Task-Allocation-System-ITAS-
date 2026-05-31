@@ -87,7 +87,12 @@ export default function Tasks() {
                         timeliness_rating: 5,
                         communication_rating: 5,
                         technical_rating: 5,
-                        performance_comments: ""
+                        performance_comments: "",
+                        skill_evaluations: task.requiredSkills?.map(skill => ({
+                            skill_name: skill,
+                            required_level: 3,
+                            achieved_level: 5
+                        })) || []
                     });
                     setRatingTask(task);
                 }
@@ -266,7 +271,12 @@ export default function Tasks() {
                                                                         timeliness_rating: 5,
                                                                         communication_rating: 5,
                                                                         technical_rating: 5,
-                                                                        performance_comments: task.performance_comments || ""
+                                                                        performance_comments: task.performance_comments || "",
+                                                                        skill_evaluations: task.requiredSkills?.map(skill => ({
+                                                                            skill_name: skill,
+                                                                            required_level: 3,
+                                                                            achieved_level: 5
+                                                                        })) || []
                                                                     });
                                                                     setRatingTask(task);
                                                                 }}
@@ -283,7 +293,12 @@ export default function Tasks() {
                                                                     timeliness_rating: 5,
                                                                     communication_rating: 5,
                                                                     technical_rating: 5,
-                                                                    performance_comments: ""
+                                                                    performance_comments: "",
+                                                                    skill_evaluations: task.requiredSkills?.map(skill => ({
+                                                                        skill_name: skill,
+                                                                        required_level: 3,
+                                                                        achieved_level: 5
+                                                                    })) || []
                                                                 });
                                                                 setRatingTask(task);
                                                             }}
@@ -409,7 +424,39 @@ export default function Tasks() {
                                 );
                             })}
                             
-                            <div className="pt-2">
+                            {ratingTask.requiredSkills && ratingTask.requiredSkills.length > 0 && (
+                                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Skill Performance Breakdown</h3>
+                                    <div className="space-y-4 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                                        {ratingData.skill_evaluations?.map((evalItem, idx) => (
+                                            <div key={idx} className="flex items-center justify-between">
+                                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 max-w-[120px] truncate" title={evalItem.skill_name}>{evalItem.skill_name}</label>
+                                                <div className="flex gap-1.5">
+                                                    {[1, 2, 3, 4, 5].map((val) => (
+                                                        <button
+                                                            key={val}
+                                                            onClick={() => {
+                                                                const newEvals = [...(ratingData.skill_evaluations || [])];
+                                                                newEvals[idx].achieved_level = val;
+                                                                setRatingData({ ...ratingData, skill_evaluations: newEvals });
+                                                            }}
+                                                            className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                                                evalItem.achieved_level >= val
+                                                                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                                                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                                            }`}
+                                                        >
+                                                            {val}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Additional Comments</label>
                                 <textarea 
                                     className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"

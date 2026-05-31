@@ -10,7 +10,7 @@ whitenoise==6.8.2
 gunicorn==21.2.0
 PyPDF2==3.0.1
 nltk==3.9.1
-spacy==3.8.0
+spacy>=3.8.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 pandas==2.2.3
 scikit-learn==1.6.0
@@ -19,3 +19,17 @@ kagglehub>=0.4.0
 python-docx==1.1.2
 # Force rebuild
 # Trigger deploy for skills update
+
+# ML Integration
+mlflow>=2.10.0
+lightgbm>=4.3.0
+sentence-transformers>=2.3.0
+celery>=5.3.6
+redis>=5.0.1
+rapidfuzz>=3.6.0
+pyarrow>=15.0.0
+langdetect>=1.0.9
+
+# Monitoring
+django-prometheus>=2.3.1
+sentry-sdk>=1.40.0

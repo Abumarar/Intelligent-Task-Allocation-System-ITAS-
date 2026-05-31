@@ -1,0 +1,54 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-and-evaluate:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install Dependencies
+        run: |
+          cd itas-backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Tests
+        env:
+          DJANGO_SETTINGS_MODULE: itas.settings.base
+          SECRET_KEY: dummy
+        run: |
+          cd itas-backend
+          pytest core/tests/
+      - name: Evaluate ML
+        env:
+          DJANGO_SETTINGS_MODULE: itas.settings.base
+          SECRET_KEY: dummy
+        run: |
+          cd itas-backend
+          python manage.py retrain_models
+
+  build-and-deploy:
+    needs: test-and-evaluate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker image
+        run: |
+          cd itas-backend
+          docker build -t itas-backend:latest .
+      - name: Deploy
+        run: echo "Deploying to production server..."

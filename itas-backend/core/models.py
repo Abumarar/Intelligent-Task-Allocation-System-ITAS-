@@ -34,6 +34,8 @@ class Employee(models.Model):
     )
     title = models.CharField(max_length=200, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
+    team = models.CharField(max_length=100, blank=True, null=True)
+    role = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -192,6 +194,12 @@ class Task(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True
     )
+    task_type = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., bugfix, feature, research, documentation")
+    complexity_level = models.CharField(
+        max_length=20, 
+        choices=[("LOW", "Low"), ("MEDIUM", "Medium"), ("HIGH", "High"), ("CRITICAL", "Critical")], 
+        default="MEDIUM"
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -264,6 +272,22 @@ class TaskAssignment(models.Model):
         return (
             f"{self.task.title} -> {self.employee.name} ({self.suitability_score:.1f}%)"
         )
+
+
+class TaskSkillEvaluation(models.Model):
+    """Skill-based performance evaluation for a task."""
+    assignment = models.ForeignKey(TaskAssignment, on_delete=models.CASCADE, related_name='skill_evaluations')
+    skill_name = models.CharField(max_length=100)
+    required_level = models.IntegerField(default=3, help_text="1-5 scale")
+    achieved_level = models.IntegerField(default=3, help_text="1-5 scale")
+    pm_comment = models.TextField(blank=True, null=True)
+    evidence = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ['assignment', 'skill_name']
+
+    def __str__(self):
+        return f"{self.skill_name} evaluation for {self.assignment}"
 
 
 class AuditLog(models.Model):

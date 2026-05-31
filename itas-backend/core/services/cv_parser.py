@@ -41,6 +41,8 @@ class ModelLoader:
             candidates = [
                 os.path.join(settings.BASE_DIR, "resume_classifier_model.pkl"),
                 os.path.join(settings.BASE_DIR, "..", "resume_classifier_model.pkl"),
+                os.path.join(settings.BASE_DIR, "ai_training", "models", "domain_predictor.pkl"),
+                os.path.join(settings.BASE_DIR, "..", "ai_training", "models", "domain_predictor.pkl"),
             ]
             for candidate in candidates:
                 if os.path.exists(candidate):
@@ -221,86 +223,58 @@ class CVParser:
                 s = re.sub(r"([A-Za-z])\s(?=[A-Za-z]\b)", r"\1", s)
 
             # 2. Merge isolated single characters at start of words: "e ngineer" -> "engineer"
-            # Look for single char followed by space, then more letters.
-            # Avoid I, A, a (common words) unless part of a larger pattern or specific context?
-            # Safe heuristic: [Letter] [Space] [3+ Letters] -> Merge
             s = re.sub(r"\b([A-Za-z])\s([A-Za-z]{3,})\b", r"\1\2", s)
 
             return re.sub(r"\s+", " ", s).strip()
 
         try:
-            # Debug: Log raw text to understand PyPDF2 output for problematic files
-
-            # 0. Extract Email (Robust to spacing artifacts like "user @ example . com")
-            # Look for: [words] possibly spaced, then @, then [words], then ., then [words]
-            # Pattern:
-            # 1. Start with chars
-            # 2. Allow space + chars repeatedly (for "mo . abumarar")
-            # 3. Then @
-            # Fix: Use safer regex to avoid catastrophic backtracking
+            # 1. Extract Email (Highest Priority)
             email_match = re.search(
-                r"([a-zA-Z0-9_.+-]+\s*@\s*[a-zA-Z0-9-]+\s*\.\s*[a-zA-Z0-9.-]+)", text
+                r"[\w\.-]+@[\w\.-]+\.\w+", text
             )
 
             if email_match:
-                raw_email = email_match.group(1)
-                # Verify it looks like an email after cleaning
-                clean_email = raw_email.replace(" ", "").strip()
-                if "@" in clean_email and "." in clean_email:
-                    details["email"] = clean_email
+                details["email"] = email_match.group(0).strip()
+            
+            # Clean text for other extractions
+            lines = [l.strip() for l in text.split("\n") if l.strip()]
 
-            # 1. Regex Extraction (High Confidence for structured CVs)
-
-            # Extract Name
+            # 2. Extract Name
+            # Labeled field "Name:"
             name_match = re.search(r"Name:\s*(.+)", text, re.IGNORECASE)
             if name_match:
                 details["name"] = _clean_spacing(name_match.group(1))
 
-            # Extract Role/Title
-            role_match = re.search(
-                r"(?:Role|Title|Position):\s*(.+)", text, re.IGNORECASE
-            )
-            if role_match:
-                details["role"] = _clean_spacing(role_match.group(1))
-
-            if details["name"] and details["role"]:
-                print(
-                    f"CV_PARSER_DEBUG: Regex found Name: {details['name']}, Role: {details['role']}"
-                )
-                return details
-
-            # 2. Extract Name (Person)
-            lines = [l.strip() for l in text.split("\n") if l.strip()]
-            if lines:
-                # Apply spacing cleanup to the first line
+            if not details["name"] and lines:
+                # First-line heuristic with title guard
                 first_line = _clean_spacing(lines[0])
-
-                # Heuristic: If name is split weirdly like "Ab Umarar" (2 chars + word), try to merge
-                # We do this specifically for potential name lines to avoid merging valid words elsewhere
-                if re.search(r"\b([A-Za-z]{2,3})\s([A-Za-z]{3,})\b", first_line):
-                    # Conservative merge logic could go here if we were confident
-                    pass
-
                 if 2 <= len(first_line.split()) <= 4 and re.match(
                     r"^[A-Za-z\s\.\-]+$", first_line
                 ):
-                    if first_line.upper() not in [
-                        "RESUME",
-                        "CURRICULUM VITAE",
-                        "CV",
-                        "PROFILE",
-                        "SUMMARY",
-                    ]:
-                        details["name"] = first_line.title()
+                    upper_first = first_line.upper()
+                    title_keywords = [
+                        "ENGINEER", "DEVELOPER", "MANAGER", "ANALYST", "DESIGNER", 
+                        "ARCHITECT", "SCIENTIST", "ADMINISTRATOR", "CONSULTANT", 
+                        "SPECIALIST", "LEAD", "DIRECTOR", "OFFICER", "RESUME", 
+                        "CURRICULUM VITAE", "CV", "PROFILE", "SUMMARY"
+                    ]
+                    
+                    is_title = any(kw in upper_first for kw in title_keywords)
+                    
+                    if not is_title:
+                        # Email domain check
+                        if details["email"] and first_line.lower().replace(" ", "") in details["email"].lower():
+                            pass
+                        elif "@" not in first_line:
+                            details["name"] = first_line.title()
 
+            # spaCy PERSON fallback
             if not details["name"]:
                 try:
+                    import spacy
                     nlp = spacy.load("en_core_web_sm")
                     first_chunk = text[:1000]
 
-                    # Pre-clean the chunk for spaCy to help it recognize entities better
-                    # but be careful not to merge unrelated words.
-                    # We only apply local spacing fix if we see the pattern of spaced-out chars.
                     cleaned_chunk = (
                         _clean_spacing(first_chunk)
                         if re.search(r"\b([A-Za-z]\s){2,}", first_chunk)
@@ -313,91 +287,89 @@ class CVParser:
                         if ent.label_ == "PERSON":
                             clean_name = ent.text.strip().title()
                             blocklist = [
-                                "Asp.Net",
-                                "Asp.Net Core",
-                                "React",
-                                "Node.Js",
-                                "Java",
-                                "Python",
-                                "Html",
-                                "Css",
-                                "Sql",
-                                "Git",
+                                "Asp.Net", "Asp.Net Core", "React", "Node.Js", "Java", "Python", 
+                                "Html", "Css", "Sql", "Git",
+                                "Software Engineer", "Full Stack Developer", "Frontend Developer", 
+                                "Backend Developer", "DevOps Engineer", "Data Scientist", 
+                                "Project Manager", "Business Analyst", "Product Manager", 
+                                "QA Engineer", "UI/UX Designer", "Scrum Master", 
+                                "System Administrator", "Database Administrator"
                             ]
 
-                            # Filter out email parts if spacy accidentally picks it up
+                            # Ensure it doesn't match email domain or contain @
+                            is_valid_name = True
                             if "@" in clean_name:
-                                continue
+                                is_valid_name = False
+                            elif details["email"] and clean_name.lower().replace(" ", "") in details["email"].lower():
+                                is_valid_name = False
+                            
+                            # Check against blocklist
+                            for blocked in blocklist:
+                                if blocked.lower() in clean_name.lower():
+                                    is_valid_name = False
+                                    break
 
                             if (
-                                len(clean_name.split()) >= 2
+                                is_valid_name
+                                and len(clean_name.split()) >= 2
                                 and re.match(r"^[A-Za-z\s\.\-]+$", clean_name)
                                 and clean_name.lower() != "name"
-                                and clean_name not in blocklist
                             ):
                                 details["name"] = clean_name
                                 break
                 except OSError:
-                    print(
-                        "CV_PARSER_WARNING: spaCy model 'en_core_web_sm' not found. Skipping detailed name extraction."
-                    )
+                    print("CV_PARSER_WARNING: spaCy model 'en_core_web_sm' not found. Skipping detailed name extraction.")
 
-            # 3. Extract Role
-            if lines and len(lines) > 1:
+            # 3. Extract Role/Title
+            # Labeled field "Role:/Title:/Position:"
+            role_match = re.search(
+                r"(?:Role|Title|Position):\s*(.+)", text, re.IGNORECASE
+            )
+            if role_match:
+                details["role"] = _clean_spacing(role_match.group(1))
+
+            roles_db = [
+                "Software Engineer", "Java Developer", "Python Developer", 
+                "Full Stack Developer", "Frontend Developer", "Backend Developer", 
+                "DevOps Engineer", "Data Scientist", "Project Manager", 
+                "Business Analyst", "Product Manager", "QA Engineer", 
+                "UI/UX Designer", "Scrum Master", "System Administrator", 
+                "Database Administrator"
+            ]
+
+            # Second-line check
+            if not details["role"] and lines and len(lines) > 1:
                 second_line = _clean_spacing(lines[1])
-                if (
-                    "|" in second_line
-                    or "Software" in second_line
-                    or "Developer" in second_line
-                    or "Engineer" in second_line
-                ):
+                # Check against full roles_db using the fixed regex
+                for role in roles_db:
+                    pattern = re.compile(re.escape(role), re.IGNORECASE)
+                    if pattern.search(second_line):
+                        details["role"] = role
+                        break
+                
+                # Fallback to original second line logic
+                if not details["role"] and ("|" in second_line or "Software" in second_line or "Developer" in second_line or "Engineer" in second_line):
                     details["role"] = second_line
 
-            # If role is still empty, look deeper
+            # roles_db scan
             if not details["role"]:
-                roles_db = [
-                    "Software Engineer",
-                    "Java Developer",
-                    "Python Developer",
-                    "Full Stack Developer",
-                    "Frontend Developer",
-                    "Backend Developer",
-                    "DevOps Engineer",
-                    "Data Scientist",
-                    "Project Manager",
-                    "Business Analyst",
-                    "Product Manager",
-                    "QA Engineer",
-                    "UI/UX Designer",
-                    "Scrum Master",
-                    "System Administrator",
-                    "Database Administrator",
-                ]
-
-                # Check cleaned text for roles
                 cleaned_text = _clean_spacing(text[:1000])
                 for role in roles_db:
-                    pattern = re.compile(rf"\\b({role})\\b", re.IGNORECASE)
+                    pattern = re.compile(re.escape(role), re.IGNORECASE)
                     match = pattern.search(cleaned_text)
                     if match:
                         start, _ = match.span()
                         prefix_match = re.search(
-                            r"\\b(Senior|Sr\.|Junior|Jr\.|Lead|Principal|Chief)\s+$",
+                            r"\b(Senior|Sr\.|Junior|Jr\.|Lead|Principal|Chief)\s+$",
                             cleaned_text[:start],
                             re.IGNORECASE,
                         )
                         if prefix_match:
-                            details["role"] = (
-                                f"{prefix_match.group(1)} {match.group(1)}".title()
-                            )
+                            details["role"] = f"{prefix_match.group(1)} {match.group(1)}".title()
                         else:
                             details["role"] = match.group(1).title()
                         break
 
-        except ImportError:
-            print(
-                "CV_PARSER_ERROR: spaCy not installed or model not found. Skipping detailed extraction."
-            )
         except Exception as e:
             print(f"CV_PARSER_ERROR: Error extracting details: {e}")
 

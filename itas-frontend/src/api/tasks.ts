@@ -167,12 +167,20 @@ export async function updateTaskProgress(taskId: string, status?: TaskStatus, no
     return res.data;
 }
 
+export interface SkillEvaluationData {
+    skill_name: string;
+    required_level: number;
+    achieved_level: number;
+    pm_comment?: string;
+}
+
 export interface PerformanceRatingData {
     quality_rating: number;
     timeliness_rating: number;
     communication_rating: number;
     technical_rating: number;
     performance_comments: string;
+    skill_evaluations?: SkillEvaluationData[];
 }
 
 export async function ratePerformance(taskId: string, data: PerformanceRatingData) {

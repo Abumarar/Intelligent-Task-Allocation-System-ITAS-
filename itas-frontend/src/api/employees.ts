@@ -5,6 +5,8 @@ export type Employee = {
     name: string;
     title?: string;
     email?: string;
+    team?: string;
+    role?: string;
     skills?: string[];
     cvStatus?: "NOT_UPLOADED" | "PROCESSING" | "READY" | "FAILED";
 
@@ -22,22 +24,25 @@ export type Employee = {
     }[];
 };
 
-export async function fetchEmployees(params?: { page?: number; limit?: number }): Promise<Employee[]> {
+export async function fetchEmployees(params?: { page?: number; limit?: number; team?: string; role?: string; title?: string }): Promise<Employee[]> {
     const res = await api.get("/employees/", {
         params: {
             page: params?.page,
-            page_size: params?.limit || 100 // Default to 100 to get "all" for dropdowns
+            page_size: params?.limit || 100, // Default to 100 to get "all" for dropdowns
+            team: params?.team,
+            role: params?.role,
+            title: params?.title
         }
     });
     return Array.isArray(res.data) ? res.data : (res.data.results || []);
 }
 
-export async function createEmployee(data: { name: string; email: string; title: string, skills?: string[] }) {
+export async function createEmployee(data: { name: string; email: string; title: string, team?: string, role?: string, skills?: string[] }) {
     const res = await api.post("/employees/", data);
     return res.data;
 }
 
-export async function updateEmployee(id: string, data: Partial<{ name: string; email: string; title: string }>) {
+export async function updateEmployee(id: string, data: Partial<{ name: string; email: string; title: string; team: string; role: string }>) {
     const res = await api.patch(`/employees/${id}/`, data);
     return res.data;
 }
@@ -64,4 +69,9 @@ export async function analyzeEmployeeCV(file: File) {
         headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data; // { name, email, role, skills }
+}
+
+export async function getPerformanceProfile(employeeId: string) {
+    const res = await api.get(`/employees/${employeeId}/performance-profile/`);
+    return res.data;
 }

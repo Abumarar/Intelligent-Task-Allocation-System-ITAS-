@@ -41,6 +41,9 @@ class MatchingEngine:
             },
         }
         self.skill_extractor = SkillExtractor()
+        
+        from core.services.ml.inference_pipeline import InferencePipeline
+        self.ml_pipeline = InferencePipeline()
 
     def calculate_suitability_score(
         self, employee: Employee, task: Task, required_skills: List[str]
@@ -128,6 +131,31 @@ class MatchingEngine:
                 confidence = max(confidence, 0.9)
             skill_profile[key] = max(skill_profile.get(key, 0.0), confidence)
 
+        # Enhance with historical real performance from tasks
+        from core.models import TaskAssignment
+        import math
+        from django.utils import timezone
+        
+        completed_assignments = TaskAssignment.objects.filter(
+            employee=employee, status="COMPLETED"
+        ).prefetch_related('skill_evaluations')
+        
+        now = timezone.now()
+        
+        for assignment in completed_assignments:
+            days_ago = (now - assignment.completed_at).days if assignment.completed_at else 365
+            # Decay factor: more recent tasks have higher weight (0.5 to 1.0)
+            time_weight = max(0.5, math.exp(-days_ago / 365.0))
+            
+            for eval in assignment.skill_evaluations.all():
+                key = self.skill_extractor.normalize_skill_key(eval.skill_name)
+                if not key:
+                    continue
+                # 1-5 scale -> 0.2 to 1.0 confidence
+                achieved_confidence = (eval.achieved_level / 5.0) * time_weight
+                # Real performance overrides static CV skills
+                skill_profile[key] = max(skill_profile.get(key, 0.0), achieved_confidence)
+
         return skill_profile
 
     def _calculate_skill_match_score(
@@ -182,11 +210,40 @@ class MatchingEngine:
         return max(0.0, min(1.0, availability))
 
     def _calculate_performance_score(self, employee: Employee) -> float:
-        """Calculate performance score based on past tasks rating (0-1)."""
-        avg_rating = employee.average_performance
-        if avg_rating is None:
+        """Calculate performance score based on past tasks rating and consistency (0-1)."""
+        from core.models import TaskAssignment
+        completed_assignments = TaskAssignment.objects.filter(
+            employee=employee, status="COMPLETED"
+        )
+        if not completed_assignments.exists():
             return 0.5  # Neutral score for new employees without history
-        return max(0.0, min(1.0, avg_rating / 5.0))
+            
+        total_rating = 0
+        count = 0
+        ratings = []
+        for a in completed_assignments:
+            if a.performance_rating:
+                total_rating += a.performance_rating
+                count += 1
+                ratings.append(a.performance_rating)
+                
+        if count == 0:
+            return 0.5
+            
+        avg_rating = total_rating / count
+        
+        # Consistency logic
+        variance = 0
+        if count > 1:
+            variance = sum((r - avg_rating) ** 2 for r in ratings) / count
+            
+        # Penalize high variance
+        consistency_penalty = min(0.2, variance * 0.05)
+        
+        base_score = avg_rating / 5.0
+        final_score = base_score - consistency_penalty
+        
+        return max(0.0, min(1.0, final_score))
 
     def _match_skill(
         self, required_skill: str, skill_profile: Dict[str, float]
@@ -352,15 +409,34 @@ class MatchingEngine:
             score = self._calculate_total_score(
                 employee, normalized_required, skill_profile, weights
             )
-            score = round(score * 100, 2)
+            
+            ml_score = 0.0
+            try:
+                if hasattr(employee, 'cv') and employee.cv and employee.cv.extracted_text and task.description:
+                    ml_score = self.ml_pipeline.calculate_similarity(task.description, employee.cv.extracted_text)
+            except Exception as e:
+                print(f"ML similarity error for employee {employee.id}: {e}")
+                
+            if ml_score > 0.0:
+                from django.conf import settings
+                is_shadow = getattr(settings, 'SHADOW_ML_DEPLOYMENT', True)
+                if is_shadow:
+                    final_score = score
+                else:
+                    final_score = (score * 0.7) + (ml_score * 0.3)
+            else:
+                final_score = score
+                
+            final_score = round(final_score * 100, 2)
 
-            if score >= min_score:
+            if final_score >= min_score:
                 matches.append(
                     {
                         "employee_id": str(employee.id),
                         "employee_name": employee.name,
                         "employee_title": employee.title or "Employee",
-                        "suitability_score": score,
+                        "suitability_score": final_score,
+                        "ml_confidence_score": round(ml_score * 100, 2),
                         "matching_skills": self._get_matching_skills(
                             normalized_required, skill_profile
                         ),

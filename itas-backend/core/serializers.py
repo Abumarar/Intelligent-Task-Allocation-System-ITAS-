@@ -5,7 +5,7 @@ Serializers for API responses
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from core.models import CV, Employee, Project, Skill, Task, TaskAssignment
+from core.models import CV, Employee, Project, Skill, Task, TaskAssignment, TaskSkillEvaluation
 
 User = get_user_model()
 
@@ -48,6 +48,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "name",
             "title",
             "email",
+            "team",
+            "role",
             "skills",
             "cvStatus",
             "cvUpdatedAt",
@@ -107,6 +109,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         # Update direct fields
         instance.title = validated_data.get("title", instance.title)
         instance.email = validated_data.get("email", instance.email)
+        instance.team = validated_data.get("team", instance.team)
+        instance.role = validated_data.get("role", instance.role)
         instance.save()
 
         # Update User fields if name or email provided
@@ -204,6 +208,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "performance_comments",
             "project_id",
             "project_title",
+            "task_type",
+            "complexity_level",
         ]
         read_only_fields = ["id", "created_by", "created_at", "updated_at"]
 
@@ -285,11 +291,22 @@ class TaskMatchSerializer(serializers.Serializer):
     average_performance = serializers.FloatField(allow_null=True, required=False)
 
 
+class TaskSkillEvaluationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskSkillEvaluation
+        fields = [
+            "id", "assignment", "skill_name", "required_level", 
+            "achieved_level", "pm_comment", "evidence"
+        ]
+        read_only_fields = ["id"]
+
+
 class TaskAssignmentSerializer(serializers.ModelSerializer):
     """Task assignment serializer."""
 
     employee_name = serializers.CharField(source="employee.name", read_only=True)
     task_title = serializers.CharField(source="task.title", read_only=True)
+    skill_evaluations = TaskSkillEvaluationSerializer(many=True, read_only=True)
 
     class Meta:
         model = TaskAssignment
@@ -311,6 +328,7 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
             "communication_rating",
             "technical_rating",
             "performance_comments",
+            "skill_evaluations",
         ]
         read_only_fields = ["id", "assigned_at"]
 

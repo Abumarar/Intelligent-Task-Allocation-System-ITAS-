@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.authentication import generate_jwt_token
-from core.models import CV, Employee, Project, Skill, Task, TaskAssignment
+from core.models import CV, Employee, Project, Skill, Task, TaskAssignment, TaskSkillEvaluation
 from core.serializers import (DashboardStatsSerializer, EmployeeSerializer,
                               ProjectSerializer, TaskAssignmentSerializer,
                               TaskMatchSerializer, TaskSerializer,
@@ -206,6 +206,18 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         else:
             # PMs see only their managed employees
             queryset = queryset.filter(manager=user)
+
+        # Apply optional filters
+        team = self.request.query_params.get("team")
+        role = self.request.query_params.get("role")
+        title = self.request.query_params.get("title")
+
+        if team:
+            queryset = queryset.filter(team__icontains=team)
+        if role:
+            queryset = queryset.filter(role__icontains=role)
+        if title:
+            queryset = queryset.filter(title__icontains=title)
 
         return queryset
 
@@ -575,6 +587,144 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(detail=True, methods=["get"], url_path="performance-profile")
+    def get_performance_profile(self, request, pk=None):
+        """Get employee's detailed performance history and aggregated metrics."""
+        employee = self.get_object()
+        
+        completed_assignments = TaskAssignment.objects.filter(
+            employee=employee, status="COMPLETED"
+        ).select_related("task", "task__project").prefetch_related("skill_evaluations").order_by("completed_at")
+        
+        history = []
+        skill_scores = {}
+        total_rating = 0
+        rated_tasks_count = 0
+        
+        for a in completed_assignments:
+            task = a.task
+            
+            for eval in a.skill_evaluations.all():
+                key = eval.skill_name.lower().strip()
+                if key not in skill_scores:
+                    skill_scores[key] = {
+                        "name": eval.skill_name,
+                        "scores": []
+                    }
+                skill_scores[key]["scores"].append(eval.achieved_level)
+                
+            if a.performance_rating:
+                total_rating += a.performance_rating
+                rated_tasks_count += 1
+                
+            history.append({
+                "assignment_id": str(a.id),
+                "task_id": str(task.id),
+                "task_title": task.title,
+                "task_description": task.description,
+                "project_name": task.project.title if task.project else None,
+                "start_date": task.start_date.isoformat() if task.start_date else None,
+                "end_date": a.completed_at.isoformat() if a.completed_at else None,
+                "task_type": getattr(task, "task_type", None),
+                "complexity_level": getattr(task, "complexity_level", None),
+                "performance_rating": a.performance_rating,
+                "pm_comments": a.performance_comments,
+                "skill_evaluations": [
+                    {
+                        "skill_name": eval.skill_name,
+                        "required_level": eval.required_level,
+                        "achieved_level": eval.achieved_level,
+                        "pm_comment": eval.pm_comment
+                    } for eval in a.skill_evaluations.all()
+                ]
+            })
+            
+        # Get base static skills
+        base_skills = {}
+        for skill in employee.skill_set.all():
+            confidence = max(0.0, min(1.0, skill.confidence_score or 0.0))
+            if getattr(skill, "source", None) == "MANUAL":
+                confidence = max(confidence, 0.9)
+            base_skills[skill.name.lower().strip()] = {
+                "name": skill.name,
+                "score": max(1.0, confidence * 5.0)
+            }
+
+        weighted_average_skill_score_per_skill = {}
+        for key, data in base_skills.items():
+            weighted_average_skill_score_per_skill[data["name"]] = data["score"]
+            
+        for key, data in skill_scores.items():
+            weighted_average_skill_score_per_skill[data["name"]] = sum(data["scores"])/len(data["scores"])
+            
+        skill_analytics = []
+        for key, data in base_skills.items():
+            if key in skill_scores:
+                scores = skill_scores[key]["scores"]
+                skill_analytics.append({
+                    "skill_name": data["name"],
+                    "score": round(sum(scores)/len(scores), 1),
+                    "tasks_used": len(scores)
+                })
+            else:
+                skill_analytics.append({
+                    "skill_name": data["name"],
+                    "score": round(data["score"], 1),
+                    "tasks_used": 0
+                })
+                
+        for key, data in skill_scores.items():
+            if key not in base_skills:
+                scores = data["scores"]
+                skill_analytics.append({
+                    "skill_name": data["name"],
+                    "score": round(sum(scores)/len(scores), 1),
+                    "tasks_used": len(scores)
+                })
+                
+        skill_analytics.sort(key=lambda x: (x["tasks_used"], x["score"]), reverse=True)
+        
+        # Skill progression over time
+        skill_progression = {}
+        for key, data in skill_scores.items():
+            scores = data["scores"]
+            name = data["name"]
+            if len(scores) > 1:
+                trend = "IMPROVING" if scores[-1] > scores[0] else "DECLINING" if scores[-1] < scores[0] else "STABLE"
+            else:
+                trend = "INSUFFICIENT_DATA"
+            skill_progression[name] = trend
+            
+        # Consistency score (variance)
+        consistency_score = 100
+        if rated_tasks_count > 1:
+            avg_rating = total_rating / rated_tasks_count
+            variance = sum((a.performance_rating - avg_rating) ** 2 for a in completed_assignments if a.performance_rating) / rated_tasks_count
+            # scale variance (0-25) into a 0-100 score where lower variance = higher consistency
+            consistency_score = max(0, 100 - (variance * 20))
+            
+        reliability_index = 0
+        total_assigned = TaskAssignment.objects.filter(employee=employee).count()
+        if rated_tasks_count > 0 and total_assigned > 0:
+            avg_rating = total_rating / rated_tasks_count
+            completion_rate = completed_assignments.count() / total_assigned
+            reliability_index = (avg_rating / 5.0) * completion_rate * 100
+            
+        return Response({
+            "employee_id": str(employee.id),
+            "employee_name": employee.name,
+            "metrics": {
+                "weighted_average_skill_score": weighted_average_skill_score_per_skill,
+                "skill_analytics": skill_analytics,
+                "skill_progression": skill_progression,
+                "consistency_score": round(consistency_score, 2),
+                "reliability_index": round(reliability_index, 2),
+                "total_completed_tasks": completed_assignments.count(),
+                "rated_tasks_count": rated_tasks_count,
+            },
+            "task_history": history
+        })
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     """Project endpoints."""
@@ -890,6 +1040,19 @@ class TaskViewSet(viewsets.ModelViewSet):
         assignment.performance_comments = comments
         assignment.performance_rating = overall_rating
         assignment.save()
+        
+        skill_evaluations = data.get("skill_evaluations", [])
+        if skill_evaluations:
+            with transaction.atomic():
+                assignment.skill_evaluations.all().delete()
+                for eval_data in skill_evaluations:
+                    TaskSkillEvaluation.objects.create(
+                        assignment=assignment,
+                        skill_name=eval_data.get("skill_name", "Unknown"),
+                        required_level=int(eval_data.get("required_level", 3)),
+                        achieved_level=int(eval_data.get("achieved_level", 3)),
+                        pm_comment=eval_data.get("pm_comment", "")
+                    )
 
         AuditService.log(
             user, "UPDATE", task, f"Rated performance detailed: {overall_rating}/5"

@@ -7,6 +7,7 @@ import {
   type Employee,
 } from "../../api/employees";
 import { unassignTask } from "../../api/tasks";
+import PerformanceProfileModal from "./PerformanceProfileModal";
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -43,30 +44,42 @@ export default function Employees() {
   });
 
   const [q, setQ] = useState("");
+  const [teamFilter, setTeamFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; tone: "success" | "error" } | null>(null);
 
   // Add Employee Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [formData, setFormData] = useState<{ name: string, email: string, title: string, skills: string[] }>({ name: "", email: "", title: "", skills: [] });
+  const [formData, setFormData] = useState<{ name: string, email: string, title: string, team: string, role: string, skills: string[] }>({ name: "", email: "", title: "", team: "", role: "", skills: [] });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedSkillsId, setExpandedSkillsId] = useState<string | null>(null);
   const [viewingTasksEmployee, setViewingTasksEmployee] = useState<Employee | null>(null);
+  const [viewingPerformanceId, setViewingPerformanceId] = useState<string | null>(null);
+
+  const uniqueTeams = useMemo(() => Array.from(new Set((data || []).map(e => e.team).filter(Boolean))) as string[], [data]);
+  const uniqueRoles = useMemo(() => Array.from(new Set((data || []).map(e => e.role).filter(Boolean))) as string[], [data]);
 
   const filtered = useMemo(() => {
     const list = data || [];
     const term = q.trim().toLowerCase();
-    if (!term) return list;
+    
     return list.filter(
-      (e) =>
-        e.name.toLowerCase().includes(term) ||
-        (e.email || "").toLowerCase().includes(term),
+      (e) => {
+        const matchesQ = !term || e.name.toLowerCase().includes(term) || (e.email || "").toLowerCase().includes(term);
+        const matchesTeam = !teamFilter || (e.team || "").toLowerCase() === teamFilter.toLowerCase();
+        const matchesRole = !roleFilter || (e.role || "").toLowerCase() === roleFilter.toLowerCase();
+        const matchesTitle = !titleFilter || (e.title || "").toLowerCase().includes(titleFilter.toLowerCase());
+        return matchesQ && matchesTeam && matchesRole && matchesTitle;
+      }
     );
-  }, [data, q]);
+  }, [data, q, teamFilter, roleFilter, titleFilter]);
 
   const counts = useMemo(() => {
     const list = data || [];
@@ -80,7 +93,7 @@ export default function Employees() {
 
   const openCreateModal = () => {
     setEditingEmployee(null);
-    setFormData({ name: "", email: "", title: "", skills: [] });
+    setFormData({ name: "", email: "", title: "", team: "", role: "", skills: [] });
     setUploadedFile(null);
     setIsModalOpen(true);
   };
@@ -91,6 +104,8 @@ export default function Employees() {
       name: employee.name,
       email: employee.email || "",
       title: employee.title || "",
+      team: employee.team || "",
+      role: employee.role || "",
       skills: [] // We don't load existing skills for now, simplified
     });
     setUploadedFile(null);
@@ -250,7 +265,7 @@ export default function Employees() {
             Upload CVs, review extracted skills, and keep profiles current.
           </p>
         </div>
-        <div className="hero-actions">
+        <div className="hero-actions flex-wrap gap-3">
           <div className="search">
             <input
               className="search-input"
@@ -259,6 +274,33 @@ export default function Employees() {
               aria-label="Search employees"
               value={q}
               onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <select 
+              className="input py-2 text-sm" 
+              value={teamFilter} 
+              onChange={e => setTeamFilter(e.target.value)}
+              aria-label="Filter by Team"
+            >
+              <option value="">All Teams</option>
+              {uniqueTeams.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <select 
+              className="input py-2 text-sm" 
+              value={roleFilter} 
+              onChange={e => setRoleFilter(e.target.value)}
+              aria-label="Filter by Role"
+            >
+              <option value="">All Roles</option>
+              {uniqueRoles.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <input
+              className="input py-2 text-sm max-w-[150px]"
+              type="text"
+              placeholder="Filter by title..."
+              value={titleFilter}
+              onChange={e => setTitleFilter(e.target.value)}
             />
           </div>
           <button className="btn btn-primary" onClick={openCreateModal}>
@@ -343,6 +385,24 @@ export default function Employees() {
                 />
               </div>
               <div className="field">
+                <label className="field-label">Team</label>
+                <input
+                  className="input"
+                  value={formData.team}
+                  onChange={e => setFormData({ ...formData, team: e.target.value })}
+                  placeholder="e.g. Frontend, Backend, Design"
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Role</label>
+                <input
+                  className="input"
+                  value={formData.role}
+                  onChange={e => setFormData({ ...formData, role: e.target.value })}
+                  placeholder="e.g. Developer, Lead, Manager"
+                />
+              </div>
+              <div className="field">
                 <label className="field-label">Skills (comma separated)</label>
                 <input
                   className="input"
@@ -385,7 +445,9 @@ export default function Employees() {
                 <div className="employee-info">
                   <div className="employee-name">{employee.name}</div>
                   <div className="employee-meta">
-                    {employee.title || employee.email || "Role not set"}
+                    {employee.title || employee.email || "Title not set"}
+                    {employee.team && <span className="ml-2 text-indigo-600 dark:text-indigo-400 font-medium">({employee.team})</span>}
+                    {employee.role && <span className="ml-2 text-slate-500 dark:text-slate-400 text-xs">[{employee.role}]</span>}
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
@@ -488,6 +550,13 @@ export default function Employees() {
                   📋
                 </button>
                 <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setViewingPerformanceId(employee.id)}
+                  title="Performance Profile"
+                >
+                  📊
+                </button>
+                <button
                   className="btn btn-ghost btn-danger btn-sm"
                   onClick={() => handleDeleteClick(employee)}
                   disabled={deletingId === employee.id}
@@ -569,6 +638,10 @@ export default function Employees() {
             </div>
           </div>
         </div>
+      )}
+
+      {viewingPerformanceId && (
+        <PerformanceProfileModal employeeId={viewingPerformanceId} onClose={() => setViewingPerformanceId(null)} />
       )}
 
     </div>

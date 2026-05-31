@@ -14,6 +14,9 @@ python -m spacy download en_core_web_sm || true
 # Convert static asset files
 python manage.py collectstatic --no-input
 
+# Run data pipeline
+python ai_training/download_data.py
+
 # Train AI Model (using Kaggle Dataset)
 python ai_training/train_model.py
 
