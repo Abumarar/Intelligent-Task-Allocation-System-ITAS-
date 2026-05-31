@@ -5,10 +5,11 @@ import os
 port = os.getenv("PORT", "10000")
 bind = f"0.0.0.0:{port}"
 
-# Worker configuration
-workers = 2
-threads = 4
+# Worker configuration optimized for low-memory environments (Render Free Tier)
+workers = 1
+threads = 2
 timeout = 120
+preload_app = True
 accesslog = "-"
 errorlog = "-"
 loglevel = "info"
