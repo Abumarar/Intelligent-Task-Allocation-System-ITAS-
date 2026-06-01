@@ -11,14 +11,14 @@
 ## Project Overview
 ITAS is an enterprise-grade, web-based system designed to optimize software development task allocation within IT projects. It leverages AI-driven matching algorithms, Natural Language Processing (NLP) for CV analysis, and historical performance tracking to ensure data-driven, unbiased task assignments.
 
-### 🌟 Recent Major Features
+### Recent Major Features
 *   **Performance Task History Profile:** A dynamic, data-driven profile for each employee that tracks granular task-level execution. Project Managers can rate specific skills (1-5 scale) used in a task upon completion.
 *   **Dynamic AI Matching Decay:** The AI Matching Engine no longer relies purely on static CV data. It dynamically adjusts employee skill profiles based on proven historical task evaluations, penalizing inconsistency and weighting recent tasks higher using an exponential time-decay function.
 *   **Interactive Visual Analytics:** Integrated `recharts` to provide Project Managers with massive, interactive visualization modals featuring Skill Usage History, Rating Progress Bars, and chronological Performance Evolution line charts.
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 | View 1 | View 2 |
 |:---:|:---:|
@@ -38,7 +38,7 @@ ITAS is an enterprise-grade, web-based system designed to optimize software deve
 
 ---
 
-## 🏛️ Architecture Overview
+## Architecture Overview
 
 The system is built on a modern decoupled architecture:
 
@@ -49,7 +49,7 @@ The system is built on a modern decoupled architecture:
 
 ---
 
-## 🚀 Environment Setup & Local Development
+## Environment Setup & Local Development
 
 This project supports full-stack orchestration using Docker.
 
@@ -89,7 +89,7 @@ This project supports full-stack orchestration using Docker.
 
 ---
 
-## 🔐 Environment Variables (.env)
+## Environment Variables (.env)
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
@@ -101,7 +101,7 @@ This project supports full-stack orchestration using Docker.
 
 ---
 
-## 📡 API Usage
+## API Usage
 
 The backend exposes a secure REST API. All endpoints (except login) require a Bearer token in the `Authorization` header.
 
@@ -125,7 +125,7 @@ The backend exposes a secure REST API. All endpoints (except login) require a Be
 
 ---
 
-## 🛳️ Deployment Guide
+## Deployment Guide
 
 ### CI/CD Pipeline
 The repository includes a GitHub Actions workflow (`.github/workflows/main.yml`) that automatically runs backend unit tests (`pytest`), formats code (`black`, `isort`), and builds the React frontend on every push to the `main` branch.
@@ -145,7 +145,7 @@ The repository includes a GitHub Actions workflow (`.github/workflows/main.yml`)
 
 ---
 
-## 🛡️ Security Measures
+## Security Measures
 *   **JWT Authentication:** Short-lived access tokens with HTTP-only refresh mechanisms.
 *   **RBAC (Role-Based Access Control):** Granular permissions ensuring PMs can only manage their own projects/employees.
 *   **Data Validation:** Strict serializers preventing injection attacks and ensuring data integrity.
