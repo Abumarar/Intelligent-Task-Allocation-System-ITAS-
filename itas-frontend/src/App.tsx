@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
@@ -7,7 +7,6 @@ import { useAuth } from "./auth/hooks";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
 import AppShell, { type NavItem } from "./components/layout/AppShell";
-import LoadingScreen from "./components/LoadingScreen";
 
 // Lazy-loaded components
 const Login = React.lazy(() => import("./pages/Login"));
@@ -45,16 +44,13 @@ function HomeRedirect() {
 }
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <Toaster position="top-right" />
-        {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
         <AuthProvider>
           <BrowserRouter>
-            <Suspense fallback={<LoadingScreen onComplete={() => {}} />}>
+            <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>}>
               <Routes>
                 <Route path="/" element={<HomeRedirect />} />
                 <Route path="/login" element={<Login />} />
