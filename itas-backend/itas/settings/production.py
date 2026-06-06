@@ -11,7 +11,12 @@ ALLOWED_HOSTS = [
     "itas-backend-qwtp.onrender.com",
     "www.jobtecacademy.com",
     "jobtecacademy.com",
+    "*",
 ]
+
+render_external_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_external_hostname:
+    ALLOWED_HOSTS.append(render_external_hostname)
 
 CORS_ALLOWED_ORIGINS = [
     "https://www.jobtecacademy.com",
