@@ -11,6 +11,13 @@ type Match = {
   employee_name: string;
   employee_title: string;
   suitability_score: number;
+  ml_confidence_score?: number;
+  breakdown?: {
+    skill_match: number;
+    historical_performance: number;
+    workload_availability: number;
+    role_prediction?: number;
+  };
   matching_skills: string[];
   current_workload: number;
 };
@@ -192,10 +199,38 @@ export default function TaskCreate() {
                         <div className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-2 py-0.5 rounded-full border border-green-100 dark:border-green-800">
                           {Math.round(match.suitability_score)}% Match
                         </div>
+                        {match.ml_confidence_score !== undefined && (
+                          <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800" title="AI Confidence based on CV and Role similarity">
+                            {Math.round(match.ml_confidence_score)}% Confidence
+                          </div>
+                        )}
                         <div className="text-xs text-slate-400 dark:text-slate-500">
                           {100 - Math.round(match.current_workload)}% Available
                         </div>
                       </div>
+                      
+                      {match.breakdown && (
+                        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] w-64 p-2 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-100 dark:border-slate-700/50">
+                           <div className="flex items-center justify-between">
+                             <span className="text-slate-500 dark:text-slate-400">Skill Match</span>
+                             <span className="font-medium text-slate-700 dark:text-slate-300">{Math.round(match.breakdown.skill_match)}%</span>
+                           </div>
+                           <div className="flex items-center justify-between">
+                             <span className="text-slate-500 dark:text-slate-400">Performance</span>
+                             <span className="font-medium text-slate-700 dark:text-slate-300">{Math.round(match.breakdown.historical_performance)}%</span>
+                           </div>
+                           <div className="flex items-center justify-between">
+                             <span className="text-slate-500 dark:text-slate-400">Availability</span>
+                             <span className="font-medium text-slate-700 dark:text-slate-300">{Math.round(match.breakdown.workload_availability)}%</span>
+                           </div>
+                           {match.breakdown.role_prediction !== undefined && (
+                             <div className="flex items-center justify-between">
+                               <span className="text-slate-500 dark:text-slate-400">ML Role Match</span>
+                               <span className="font-medium text-slate-700 dark:text-slate-300">{Math.round(match.breakdown.role_prediction)}%</span>
+                             </div>
+                           )}
+                        </div>
+                      )}
                       {match.matching_skills.length > 0 && (
                         <div className="flex gap-1 mt-2">
                           {match.matching_skills.slice(0, 3).map(skill => (

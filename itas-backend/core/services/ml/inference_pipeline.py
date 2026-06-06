@@ -34,16 +34,16 @@ class InferencePipeline:
             return {"prediction": "", "confidence": 0.0, "probabilities": {}}
 
     def calculate_similarity(self, text1: str, text2: str) -> float:
-        """Calculate cosine similarity between two texts using TF-IDF baseline."""
+        """Calculate cosine similarity between two texts using SentenceTransformer."""
         from sklearn.metrics.pairwise import cosine_similarity
         
-        vec1 = self.feature_transformer.transform_text_to_tfidf(text1)
-        vec2 = self.feature_transformer.transform_text_to_tfidf(text2)
+        vec1 = self.feature_transformer.transform_text_to_embedding(text1)
+        vec2 = self.feature_transformer.transform_text_to_embedding(text2)
         
         if vec1 is None or vec2 is None:
             return 0.0
             
-        sim = cosine_similarity(vec1, vec2)[0][0]
+        sim = cosine_similarity([vec1], [vec2])[0][0]
         return float(sim)
         
     def rank_candidates(self, task_text: str, candidate_texts: List[str]) -> List[float]:

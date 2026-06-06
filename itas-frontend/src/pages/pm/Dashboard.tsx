@@ -229,6 +229,11 @@ export default function PMDashboard() {
                           <div className="match-name">{match.employee_name}</div>
                           <div className="match-meta">
                             {match.employee_title} - {Math.round(match.suitability_score)}% fit
+                            {match.ml_confidence_score !== undefined && (
+                              <span style={{ marginLeft: '8px', color: 'var(--accent-teal)', fontWeight: 'bold' }}>
+                                ({Math.round(match.ml_confidence_score)}% Conf)
+                              </span>
+                            )}
                           </div>
                         </div>
                         <button 
@@ -240,13 +245,24 @@ export default function PMDashboard() {
                           {assignMutation.isPending ? 'Assigning...' : 'Assign'}
                         </button>
                       </div>
-                      <div className="tag-list">
+                      <div className="tag-list" style={{ marginTop: '8px' }}>
                         {match.matching_skills.map((skill) => (
                           <span key={skill} className="tag">
                             {skill}
                           </span>
                         ))}
                       </div>
+                      
+                      {match.breakdown && (
+                        <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.75rem', color: 'var(--muted)', background: 'var(--bg-card-hover)', padding: '8px', borderRadius: '6px' }}>
+                          <div><strong style={{ color: 'var(--text-main)' }}>Skill:</strong> {Math.round(match.breakdown.skill_match)}%</div>
+                          <div><strong style={{ color: 'var(--text-main)' }}>Perf:</strong> {Math.round(match.breakdown.historical_performance)}%</div>
+                          <div><strong style={{ color: 'var(--text-main)' }}>Avail:</strong> {Math.round(match.breakdown.workload_availability)}%</div>
+                          {match.breakdown.role_prediction !== undefined && (
+                             <div><strong style={{ color: 'var(--text-main)' }}>ML:</strong> {Math.round(match.breakdown.role_prediction)}%</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

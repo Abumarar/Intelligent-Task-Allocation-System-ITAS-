@@ -4,7 +4,7 @@ Calculates how well an employee matches task requirements based on skills, workl
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from django.db.models import Case, Count, F, Q, Value, When
 from django.db.models.functions import Lower
@@ -63,7 +63,7 @@ class MatchingEngine:
         skill_profile = self._build_skill_profile(employee)
         weights = self._get_weights(task.priority)
 
-        total_score = self._calculate_total_score(
+        total_score, _ = self._calculate_total_score(
             employee, normalized_required, skill_profile, weights
         )
 
@@ -75,7 +75,7 @@ class MatchingEngine:
         normalized_required: List[str],
         skill_profile: Dict[str, float],
         weights: Dict[str, float],
-    ) -> float:
+    ) -> Tuple[float, Dict[str, float]]:
         performance_score = self._calculate_performance_score(employee)
 
         if not normalized_required:
@@ -84,11 +84,18 @@ class MatchingEngine:
             perf_weight = weights.get("performance", 0.0)
             total_weight = workload_weight + perf_weight
 
+            breakdown = {
+                "skill_match": 100.0,
+                "historical_performance": round(performance_score * 100, 1),
+                "workload_availability": round(workload_score * 100, 1)
+            }
+
             if total_weight > 0:
-                return (
+                final_score = (
                     workload_score * workload_weight + performance_score * perf_weight
                 ) / total_weight
-            return workload_score
+                return final_score, breakdown
+            return workload_score, breakdown
 
         skill_score = self._calculate_skill_match_score(
             skill_profile, normalized_required
@@ -108,8 +115,14 @@ class MatchingEngine:
             + workload_score * weights["workload"]
             + performance_score * weights.get("performance", 0.0)
         )
+        
+        breakdown = {
+            "skill_match": round(skill_score * 100, 1),
+            "historical_performance": round(performance_score * 100, 1),
+            "workload_availability": round(workload_score * 100, 1)
+        }
 
-        return max(0.0, min(1.0, total_score))
+        return max(0.0, min(1.0, total_score)), breakdown
 
     def _normalize_required_skills(self, required_skills: List[str]) -> List[str]:
         normalized = []
@@ -406,7 +419,7 @@ class MatchingEngine:
         matches = []
         for employee in candidates:
             skill_profile = self._build_skill_profile(employee)
-            score = self._calculate_total_score(
+            score, breakdown = self._calculate_total_score(
                 employee, normalized_required, skill_profile, weights
             )
             
@@ -416,6 +429,8 @@ class MatchingEngine:
                     ml_score = self.ml_pipeline.calculate_similarity(task.description, employee.cv.extracted_text)
             except Exception as e:
                 print(f"ML similarity error for employee {employee.id}: {e}")
+                
+            breakdown["role_prediction"] = round(ml_score * 100, 1)
                 
             if ml_score > 0.0:
                 from django.conf import settings
@@ -428,6 +443,9 @@ class MatchingEngine:
                 final_score = score
                 
             final_score = round(final_score * 100, 2)
+            
+            # Use ml_score as confidence, or a fallback heuristic
+            confidence_score = round(ml_score * 100, 2) if ml_score > 0 else round(min(1.0, score + 0.1) * 100, 2)
 
             if final_score >= min_score:
                 matches.append(
@@ -436,7 +454,8 @@ class MatchingEngine:
                         "employee_name": employee.name,
                         "employee_title": employee.title or "Employee",
                         "suitability_score": final_score,
-                        "ml_confidence_score": round(ml_score * 100, 2),
+                        "ml_confidence_score": confidence_score,
+                        "breakdown": breakdown,
                         "matching_skills": self._get_matching_skills(
                             normalized_required, skill_profile
                         ),

@@ -59,11 +59,20 @@ export type TaskUpdate = Partial<
     >
 >;
 
+export type TaskMatchBreakdown = {
+    skill_match: number;
+    historical_performance: number;
+    workload_availability: number;
+    role_prediction?: number;
+};
+
 export type TaskMatch = {
     employee_id: string;
     employee_name: string;
     employee_title?: string;
     suitability_score: number; // 0..100 (or 0..1) depending on backend
+    ml_confidence_score?: number; // 0..100
+    breakdown?: TaskMatchBreakdown;
     matching_skills: string[];
     missing_skills?: string[];
     current_workload: number; // number of tasks or hours depending on backend
