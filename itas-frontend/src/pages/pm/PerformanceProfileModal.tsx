@@ -32,7 +32,7 @@ export default function PerformanceProfileModal({ employeeId, onClose }: { emplo
   const { metrics, task_history, employee_name } = data;
 
   const timelineData = [...task_history].reverse().map(task => ({
-    name: (task.task_title || "Unknown Task").substring(0, 15) + "...",
+    name: task.task_title || "Unknown Task",
     rating: task.performance_rating || 0,
   }));
 
@@ -95,8 +95,8 @@ export default function PerformanceProfileModal({ employeeId, onClose }: { emplo
           <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col h-80">
             <h3 className="text-lg font-semibold mb-4 shrink-0">Performance Evolution</h3>
             {timelineData.length > 0 ? (
-              <div className="flex-grow min-h-0 flex items-end gap-2 pb-6 pt-4 px-2 relative ml-6">
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6 pt-4 px-2">
+              <div className="flex-grow min-h-0 flex items-end gap-2 pb-16 pt-4 px-2 relative ml-6">
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-16 pt-4 px-2">
                   {[5, 4, 3, 2, 1, 0].map(val => (
                     <div key={val} className="w-full flex items-center border-b border-slate-300 dark:border-slate-700 opacity-20 relative h-0">
                       <span className="absolute -left-6 text-[10px] text-slate-500">{val}</span>
@@ -113,8 +113,8 @@ export default function PerformanceProfileModal({ employeeId, onClose }: { emplo
                         {d.rating} Rating
                       </div>
                     </div>
-                    <div className="absolute -bottom-6 text-[10px] text-slate-500 truncate w-full text-center" title={d.name}>
-                      {d.name.substring(0, 8)}
+                    <div className="absolute top-full mt-2 text-[10px] text-slate-500 w-full text-center break-words px-1 leading-tight" title={d.name}>
+                      {d.name}
                     </div>
                   </div>
                 ))}
