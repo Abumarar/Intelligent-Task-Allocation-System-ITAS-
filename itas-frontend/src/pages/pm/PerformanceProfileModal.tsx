@@ -1,9 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { getPerformanceProfile } from '../../api/employees';
-import {
-  ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip
-} from 'recharts';
 
 export default function PerformanceProfileModal({ employeeId, onClose }: { employeeId: string, onClose: () => void }) {
   const { data, isLoading, error } = useQuery({
@@ -36,7 +32,7 @@ export default function PerformanceProfileModal({ employeeId, onClose }: { emplo
   const { metrics, task_history, employee_name } = data;
 
   const timelineData = [...task_history].reverse().map(task => ({
-    name: task.task_title.substring(0, 15) + "...",
+    name: (task.task_title || "Unknown Task").substring(0, 15) + "...",
     rating: task.performance_rating || 0,
   }));
 
@@ -99,16 +95,29 @@ export default function PerformanceProfileModal({ employeeId, onClose }: { emplo
           <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col h-80">
             <h3 className="text-lg font-semibold mb-4 shrink-0">Performance Evolution</h3>
             {timelineData.length > 0 ? (
-              <div className="flex-grow min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timelineData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 5]} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="rating" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="flex-grow min-h-0 flex items-end gap-2 pb-6 pt-4 px-2 relative ml-6">
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6 pt-4 px-2">
+                  {[5, 4, 3, 2, 1, 0].map(val => (
+                    <div key={val} className="w-full flex items-center border-b border-slate-300 dark:border-slate-700 opacity-20 relative h-0">
+                      <span className="absolute -left-6 text-[10px] text-slate-500">{val}</span>
+                    </div>
+                  ))}
+                </div>
+                {timelineData.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative group">
+                    <div 
+                      className="w-full max-w-[24px] bg-emerald-500 rounded-t-sm transition-all hover:bg-emerald-400 cursor-pointer"
+                      style={{ height: `${(d.rating / 5) * 100}%` }}
+                    >
+                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 transition-opacity">
+                        {d.rating} Rating
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-6 text-[10px] text-slate-500 truncate w-full text-center" title={d.name}>
+                      {d.name.substring(0, 8)}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="flex-grow flex items-center justify-center text-slate-500">No historical tasks</div>
