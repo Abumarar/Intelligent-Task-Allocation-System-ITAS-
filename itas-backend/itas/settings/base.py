@@ -21,9 +21,6 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # Shadow ML Deployment Flag
 SHADOW_ML_DEPLOYMENT = os.getenv("SHADOW_ML_DEPLOYMENT", "True") == "True"
 
-# Employee Capacity Settings
-EMPLOYEE_MAX_CAPACITY = int(os.getenv("EMPLOYEE_MAX_CAPACITY", "5"))
-
 ALLOWED_HOSTS = []
 
 # Applications
@@ -40,7 +37,6 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "core.apps.CoreConfig",
-    "apps.ai.apps.AIConfig",
     
     # Monitoring
     "django_prometheus",
@@ -184,8 +180,6 @@ CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
-CELERY_BROKER_CONNECTION_TIMEOUT = 2.0
 
 # Sentry Monitoring Setup
 import sentry_sdk

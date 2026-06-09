@@ -348,9 +348,8 @@ class MatchingEngine:
 
         # 1. Base Query with optimization
         # Use annotated workload to filter overloaded employees at DB level
-        # Assuming max capacity of MAX_CAPACITY tasks = 100% workload
-        from django.conf import settings
-        MAX_CAPACITY = settings.EMPLOYEE_MAX_CAPACITY
+        # Assuming max capacity of 5 tasks = 100% workload
+        MAX_CAPACITY = 5
 
         employees_query = Employee.objects.select_related("user").prefetch_related(
             "skill_set"
