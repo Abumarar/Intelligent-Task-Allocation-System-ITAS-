@@ -1,3 +1,6 @@
-from .base import *
+import os
 
-# Default to development if DJANGO_SETTINGS_MODULE is not explicitly set to production
+if os.environ.get("RENDER"):
+    from .production import *
+else:
+    from .development import *
