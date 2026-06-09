@@ -5,6 +5,15 @@ Extracts technical skills from CV text using fast NLP-lite techniques.
 
 import re
 from typing import Any, Dict, List, Optional, Pattern, Set
+import logging
+
+try:
+    import spacy
+    from spacy.matcher import PhraseMatcher
+except ImportError:
+    spacy = None
+
+logger = logging.getLogger(__name__)
 
 
 class SkillExtractor:
@@ -262,39 +271,35 @@ class SkillExtractor:
         "bdd",
     }
 
-    # Class-level cache for compiled regex
-    _skills_pattern: Optional[Pattern] = None
+    # Class-level cache
     _known_skill_keys: Optional[Set[str]] = None
+    _nlp = None
+    _matcher = None
 
     def __init__(self):
         # Initialize class-level attributes if not done yet
         if SkillExtractor._known_skill_keys is None:
             SkillExtractor._known_skill_keys = set(self.TECHNICAL_SKILLS) | set(
-                self.SKILL_ALIASES.values()
+                self.SKILL_ALIASES.keys()
             )
 
-        if SkillExtractor._skills_pattern is None:
-            SkillExtractor._skills_pattern = self._build_skills_pattern()
-
-    @classmethod
-    def _build_skills_pattern(cls) -> Pattern:
-        """Build regex pattern for skill matching."""
-        # Create pattern that matches skills (case-insensitive, custom boundaries)
-        skills_list = sorted(
-            cls.TECHNICAL_SKILLS | set(cls.SKILL_ALIASES.keys()), key=len, reverse=True
-        )
-        pattern = (
-            r"(?<!\w)("
-            + "|".join(re.escape(skill) for skill in skills_list)
-            + r")(?!\w)"
-        )
-        return re.compile(pattern, re.IGNORECASE)
+        if spacy and SkillExtractor._nlp is None:
+            try:
+                SkillExtractor._nlp = spacy.load("en_core_web_sm")
+                SkillExtractor._matcher = PhraseMatcher(SkillExtractor._nlp.vocab, attr="LOWER")
+                
+                # Add all known skills to the matcher
+                patterns = [SkillExtractor._nlp.make_doc(text) for text in SkillExtractor._known_skill_keys]
+                SkillExtractor._matcher.add("SKILL", patterns)
+            except Exception as e:
+                logger.error(f"Failed to initialize spaCy: {e}. Ensure en_core_web_sm is downloaded.")
+                SkillExtractor._nlp = None
 
     def extract_skills(
         self, text: str, min_confidence: float = 0.3
     ) -> List[Dict[str, Any]]:
         """
-        Extract skills from CV text.
+        Extract skills from CV text using spaCy.
 
         Args:
             text: CV text content
@@ -306,31 +311,35 @@ class SkillExtractor:
         if not text:
             return []
 
-        text_lower = text.lower()
         found_skills: Dict[str, Dict[str, Any]] = {}
 
-        # Method 1: Direct pattern matching
-        matches = self._skills_pattern.findall(text_lower)
-        for match in matches:
-            skill_key = self.normalize_skill_key(match)
-            if not skill_key:
-                continue
-            if skill_key not in found_skills:
-                found_skills[skill_key] = {
-                    "name": self.normalize_skill_name(skill_key),
-                    "confidence_score": 0.8,  # High confidence for direct matches
-                    "count": 0,
-                }
-            found_skills[skill_key]["count"] += 1
-
-        # Method 2: Context-based extraction (look for skill sections)
+        if SkillExtractor._nlp and SkillExtractor._matcher:
+            # Method 1: spaCy PhraseMatcher
+            # Truncate text if extremely long to avoid memory issues with NLP
+            doc = SkillExtractor._nlp(text[:50000])
+            matches = SkillExtractor._matcher(doc)
+            
+            for match_id, start, end in matches:
+                span = doc[start:end]
+                skill_key = self.normalize_skill_key(span.text)
+                if not skill_key:
+                    continue
+                    
+                if skill_key not in found_skills:
+                    found_skills[skill_key] = {
+                        "name": self.normalize_skill_name(skill_key),
+                        "confidence_score": 0.85, # High confidence for exact spacy matches
+                        "count": 0,
+                    }
+                found_skills[skill_key]["count"] += 1
+                
+        # Method 2: Context-based extraction (look for skill sections) as fallback/supplement
         skill_sections = self._extract_skill_sections(text)
         for skill in skill_sections:
             skill_key = self.normalize_skill_key(skill)
             if not skill_key:
                 continue
 
-            # Check if it's a known skill to assign confidence
             is_known = skill_key in self._known_skill_keys
             base_confidence = 0.9 if is_known else 0.55
 
@@ -345,19 +354,6 @@ class SkillExtractor:
                 found_skills[skill_key]["confidence_score"] = min(
                     1.0, found_skills[skill_key]["confidence_score"] + 0.1
                 )
-
-        # Method 3: N-gram analysis for compound skills
-        compound_skills = self._extract_compound_skills(text)
-        for skill in compound_skills:
-            skill_key = self.normalize_skill_key(skill)
-            if not skill_key:
-                continue
-            if skill_key not in found_skills:
-                found_skills[skill_key] = {
-                    "name": self.normalize_skill_name(skill_key),
-                    "confidence_score": 0.6,
-                    "count": 1,
-                }
 
         # Boost confidence for repeated mentions
         for skill_data in found_skills.values():
@@ -377,9 +373,7 @@ class SkillExtractor:
             if skill_data["confidence_score"] >= min_confidence
         ]
 
-        # Sort by confidence score
         result.sort(key=lambda x: x["confidence_score"], reverse=True)
-
         return result
 
     def _extract_skill_sections(self, text: str) -> List[str]:

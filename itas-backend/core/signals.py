@@ -68,3 +68,47 @@ def notify_pm_on_completion(sender, instance, **kwargs):
                     )
         except Task.DoesNotExist:
             pass
+
+@receiver(post_save, sender=TaskAssignment)
+def capture_training_data_on_completion(sender, instance, **kwargs):
+    """
+    Feedback Learning Loop: When a TaskAssignment is updated with a performance rating
+    (usually upon completion), extract the candidate's features at this exact moment
+    and log it into the TrainingData table for continuous ML learning.
+    """
+    # Only proceed if the assignment has a performance rating (i.e. is fully evaluated)
+    if not instance.performance_rating:
+        return
+        
+    try:
+        from apps.ai.models import TrainingData
+        from apps.ai.services.feature_store import FeatureStore
+        
+        # Check if we already logged this assignment to avoid duplicates
+        # In a real app we might use a unique constraint or composite key
+        
+        fs = FeatureStore()
+        features_df = fs.build_features(instance.task, [instance.employee])
+        
+        if features_df is None or features_df.empty:
+            return
+            
+        row = features_df.iloc[0]
+        
+        TrainingData.objects.create(
+            employee_id=instance.employee.id,
+            task_id=instance.task.id,
+            performance_score=instance.performance_rating,
+            skill_overlap_ratio=row.get('skill_overlap_ratio', 0.0),
+            missing_required_skills=row.get('missing_required_skills', 0),
+            average_rating=row.get('average_rating', 0.0),
+            current_workload_pct=row.get('current_workload_pct', 0.0),
+            availability_score=row.get('availability_score', 0.0),
+            semantic_match_score=row.get('semantic_match_score', 0.0),
+            task_priority_encoded=row.get('task_priority_encoded', 2),
+            task_complexity_encoded=row.get('task_complexity_encoded', 2)
+        )
+        print(f"Feedback Learning Loop: Captured training data for Task {instance.task.id} -> Emp {instance.employee.id}")
+        
+    except Exception as e:
+        print(f"Error capturing training data: {e}")

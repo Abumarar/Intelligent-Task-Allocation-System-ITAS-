@@ -1,0 +1,23 @@
+artifact_path: /mnt/82d8c339-1453-4a02-9a6b-30cc828ec2ef/My Projects/Intelligent-Task-Allocation-System-ITAS-/mlruns/3/models/m-013e8481f5b54c68b05aa560d3c88ddb/artifacts
+flavors:
+  lightgbm:
+    code: null
+    data: model.pkl
+    lgb_version: 4.6.0
+    model_class: lightgbm.sklearn.LGBMRanker
+    serialization_format: cloudpickle
+    skops_trusted_types: null
+  python_function:
+    data: model.pkl
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.lightgbm
+    python_version: 3.12.3
+mlflow_version: 3.13.0
+model_id: m-013e8481f5b54c68b05aa560d3c88ddb
+model_size_bytes: 115338
+model_uuid: m-013e8481f5b54c68b05aa560d3c88ddb
+prompts: null
+run_id: 275c0765d6cc4a4fa307b303c8c12cc8
+utc_time_created: '2026-06-09 18:49:24.541263'
