@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "core.apps.CoreConfig",
+    "apps.ai.apps.AIConfig",
     
     # Monitoring
     "django_prometheus",

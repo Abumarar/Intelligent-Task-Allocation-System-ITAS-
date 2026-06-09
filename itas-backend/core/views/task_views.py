@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from core.models import User, Employee, Project, Task, TaskAssignment, Skill, AuditLog, CV
+from core.models import User, Employee, Project, Task, TaskAssignment, TaskSkillEvaluation, Skill, AuditLog, CV
 from core.serializers import UserSerializer, EmployeeSerializer, ProjectSerializer, TaskSerializer, TaskAssignmentSerializer, TaskMatchSerializer
 from core.services.audit_service import AuditService
 from core.services.matching_engine import MatchingEngine
