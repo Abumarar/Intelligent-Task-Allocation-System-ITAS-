@@ -49,7 +49,8 @@ class RecommendationService:
         # Pre-filtering logic similar to old matching_engine
         from django.db.models import Count, Q
         
-        MAX_CAPACITY = 5
+        from django.conf import settings
+        MAX_CAPACITY = settings.EMPLOYEE_MAX_CAPACITY
         employees_query = Employee.objects.select_related("user").prefetch_related("skill_set")
         employees_query = employees_query.annotate(
             active_task_count=Count(

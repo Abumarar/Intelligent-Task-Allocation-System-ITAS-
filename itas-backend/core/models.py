@@ -60,8 +60,9 @@ class Employee(models.Model):
         active_tasks = self.taskassignment_set.filter(
             status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED"]
         ).count()
-        # Assuming max capacity of 5 active tasks = 100%
-        max_capacity = 5
+        # Assuming max capacity of MAX_CAPACITY active tasks = 100%
+        from django.conf import settings
+        max_capacity = settings.EMPLOYEE_MAX_CAPACITY
         return min(100, (active_tasks / max_capacity) * 100) if max_capacity > 0 else 0
 
     @property

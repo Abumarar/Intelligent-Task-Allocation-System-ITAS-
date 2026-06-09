@@ -21,7 +21,8 @@ def notify_employee_on_assignment(sender, instance, created, **kwargs):
         print(
             f"Signal triggered: Assignment for task {task.id} to {employee.name} (Status: {instance.status})"
         )
-        EmailService.send_task_assignment_email(employee, task)
+        from core.tasks import send_assignment_email_async
+        send_assignment_email_async.delay(employee.id, task.id)
 
 
 @receiver(post_save, sender=Task)
@@ -63,9 +64,8 @@ def notify_pm_on_completion(sender, instance, **kwargs):
                     f"Signal triggered: Task {instance.id} status changed to {instance.status}"
                 )
                 if instance.created_by:
-                    EmailService.send_task_completion_email(
-                        instance.created_by, instance
-                    )
+                    from core.tasks import send_completion_email_async
+                    send_completion_email_async.delay(instance.created_by.id, instance.id)
         except Task.DoesNotExist:
             pass
 

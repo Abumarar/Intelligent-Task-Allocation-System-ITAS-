@@ -21,6 +21,9 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # Shadow ML Deployment Flag
 SHADOW_ML_DEPLOYMENT = os.getenv("SHADOW_ML_DEPLOYMENT", "True") == "True"
 
+# Employee Capacity Settings
+EMPLOYEE_MAX_CAPACITY = int(os.getenv("EMPLOYEE_MAX_CAPACITY", "5"))
+
 ALLOWED_HOSTS = []
 
 # Applications
@@ -37,6 +40,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "core.apps.CoreConfig",
+    "apps.ai.apps.AIConfig",
     
     # Monitoring
     "django_prometheus",
