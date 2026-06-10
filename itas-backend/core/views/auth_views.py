@@ -13,6 +13,7 @@ from core.services.audit_service import AuditService
 from core.services.matching_engine import MatchingEngine
 from core.services.cv_parser import CVParser
 from core.services.skill_extractor import SkillExtractor
+from core.authentication import generate_jwt_token
 
 
 class AuthView(APIView):
