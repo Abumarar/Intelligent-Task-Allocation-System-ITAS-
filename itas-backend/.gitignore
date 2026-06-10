@@ -58,3 +58,9 @@ htmlcov/
 dataset/
 *.pkl
 ai_training/__pycache__/
+
+# Scratchpad test scripts
+test_api.py
+test_docx.py
+test_login2.py
+test_cv.docx
