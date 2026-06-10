@@ -215,13 +215,23 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         # Extract Skills
         try:
-            from .services.skill_extractor import SkillExtractor
-
             extractor = SkillExtractor()
-            skills_data = extractor.extract_skills(extracted_text)
+            
+            import re
+            cleaned_text = extracted_text
+            if re.search(r"\b([A-Za-z]\s){2,}[A-Za-z]\b", cleaned_text):
+                cleaned_text = re.sub(r"([A-Za-z])\s(?=[A-Za-z]\b)", r"\1", cleaned_text)
+            cleaned_text = re.sub(r"\b([A-Za-z])\s([A-Za-z]{3,})\b", r"\1\2", cleaned_text)
+
+            skills_data = extractor.extract_skills(cleaned_text)
             details["skills"] = [s["name"] for s in skills_data]
+            
+            with open("debug_employee_skills.log", "w") as f:
+                f.write(f"TEXT:\n{cleaned_text[:1000]}\n\nSKILLS:\n{details['skills']}")
         except Exception as e:
             print(f"Error extracting skills in analyze_cv: {e}")
+            with open("debug_employee_skills.log", "w") as f:
+                f.write(f"ERROR:\n{e}")
             details["skills"] = []
 
         return Response(details)
