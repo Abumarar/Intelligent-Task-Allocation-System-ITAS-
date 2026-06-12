@@ -80,12 +80,18 @@ Create a `.env` file in the `itas-backend` directory:
 ```env
 SECRET_KEY=your-secret-key-here
 DEBUG=True
-DB_NAME=itas_db
-DB_USER=itas_user
-DB_PASSWORD=your_password
-DB_HOST=localhost
-DB_PORT=5432
+DATABASE_URL=postgres://user:password@host:5432/dbname
 JWT_SECRET_KEY=your-jwt-secret-key
+
+# Celery & Redis
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+
+# MLflow Tracking
+MLFLOW_TRACKING_URI=sqlite:///mlflow.db
+
+# Gemini API (Required for AI CV parsing features like title extraction)
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ### 5. Run Migrations
@@ -193,6 +199,32 @@ The matching engine calculates suitability scores (0-100) based on dynamic prior
 3. **Skill Coverage (15% weight)**: Proportion of required skills the employee possesses
 4. **Experience Level (10% weight)**: Confidence scores from skill extraction
 5. **Past Performance (10% weight)**: Based on detailed PM ratings (quality, timeliness, communication, technical) on past tasks
+
+## AI Model Training
+
+The system utilizes Machine Learning models for predicting domains and calculating the semantic similarity between a task description and an employee's CV. You can retrain these models locally if you have new datasets.
+
+### Training Instructions
+
+1. Ensure your virtual environment is activated:
+   ```bash
+   venv\Scripts\activate  # On Windows
+   source venv/bin/activate  # On Linux/Mac
+   ```
+
+2. Run the complete training pipeline:
+   ```bash
+   python -m ai_training.train_model
+   ```
+
+The pipeline executes the following stages:
+- **Skill Predictor**: Trains the domain/role classification model (`resume_classifier_model.pkl`).
+- **Matching Models**: 
+  - Generates the TF-IDF baseline vectorizer.
+  - Downloads the necessary pre-trained weights for `SentenceTransformers`.
+  - Trains the LightGBM ranker (`lgbm_ranker.pkl`).
+
+Models are saved automatically to the `ai_training/models/` directory and loaded dynamically by the inference pipeline.
 
 ## Development Notes
 

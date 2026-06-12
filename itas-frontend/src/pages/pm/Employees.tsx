@@ -125,7 +125,7 @@ export default function Employees() {
         ...prev,
         name: data.name || prev.name,
         email: data.email || prev.email,
-        title: data.role || prev.title,
+        title: data.title || prev.title,
         skills: data.skills || []
       }));
       setMsg({ text: "Details auto-filled from CV.", tone: "success" });

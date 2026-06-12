@@ -7,7 +7,7 @@ from typing import List, Dict
 # Settings
 NUM_EMPLOYEES = 500
 NUM_TASKS = 2000
-NUM_ASSIGNMENTS = 50000
+NUM_ASSIGNMENTS = 200000
 
 np.random.seed(42)
 random.seed(42)

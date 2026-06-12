@@ -382,16 +382,18 @@ class SkillExtractor:
 
         # Common section headers
         skill_headers = [
-            r"skills?\s*:",
-            r"technical\s+skills?\s*:",
-            r"competencies?\s*:",
-            r"expertise\s*:",
-            r"technologies?\s*:",
-            r"tools?\s*:",
+            r"^skills?\s*[:]?\s*$",
+            r"^technical\s+skills?\s*[:]?\s*$",
+            r"^competencies?\s*[:]?\s*$",
+            r"^expertise\s*[:]?\s*$",
+            r"^technologies?\s*[:]?\s*$",
+            r"^tools?\s*[:]?\s*$",
+            r"\bskills?\s*:",
+            r"\btechnical\s+skills?\s*:",
         ]
 
         for header_pattern in skill_headers:
-            pattern = re.compile(header_pattern, re.IGNORECASE)
+            pattern = re.compile(header_pattern, re.IGNORECASE | re.MULTILINE)
             matches = pattern.finditer(text)
 
             for match in matches:

@@ -198,11 +198,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         # Extract details using parser logic
         details = parser.extract_details(extracted_text)
 
-        # Fallback to AI prediction for role
-        if not details["role"]:
-            predicted_role = parser.predict_role_with_ai(extracted_text)
-            if predicted_role:
-                details["role"] = predicted_role
+        # Fallback to AI prediction for title
+        if not details.get("title"):
+            predicted_title = parser.predict_role_with_ai(extracted_text)
+            if predicted_title:
+                details["title"] = predicted_title
 
         # Basic Email Extraction
         import re
@@ -226,12 +226,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             skills_data = extractor.extract_skills(cleaned_text)
             details["skills"] = [s["name"] for s in skills_data]
             
-            with open("debug_employee_skills.log", "w") as f:
-                f.write(f"TEXT:\n{cleaned_text[:1000]}\n\nSKILLS:\n{details['skills']}")
         except Exception as e:
             print(f"Error extracting skills in analyze_cv: {e}")
-            with open("debug_employee_skills.log", "w") as f:
-                f.write(f"ERROR:\n{e}")
             details["skills"] = []
 
         return Response(details)

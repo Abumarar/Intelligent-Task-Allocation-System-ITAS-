@@ -83,7 +83,11 @@ class CVParser:
         """
         try:
             # Handle different file inputs
-            if isinstance(file, bytes):
+            if isinstance(file, str) and os.path.isfile(file):
+                with open(file, 'rb') as f:
+                    file_content = f.read()
+                file_stream = io.BytesIO(file_content)
+            elif isinstance(file, bytes):
                 file_stream = io.BytesIO(file)
             elif hasattr(file, "read"):
                 if hasattr(file, "seek"):
@@ -144,7 +148,11 @@ class CVParser:
 
         try:
             # Read the file content
-            if isinstance(file, bytes):
+            if isinstance(file, str) and os.path.isfile(file):
+                with open(file, 'rb') as f:
+                    file_content = f.read()
+                doc_file = io.BytesIO(file_content)
+            elif isinstance(file, bytes):
                 doc_file = io.BytesIO(file)
             elif hasattr(file, "read"):
                 if hasattr(file, "seek"):
@@ -211,7 +219,7 @@ class CVParser:
         Extract basic details (Name, Email, Role/Title) from CV text.
         This is a heuristic implementation using spaCy.
         """
-        details = {"name": None, "email": None, "role": None}
+        details = {"name": None, "email": None, "title": None, "role": None}
 
         # Helper to clean weird PDF spacing (e.g. "S o f t w a r e" -> "Software", "e ngineer" -> "engineer")
         def _clean_spacing(s: str) -> str:
@@ -268,12 +276,19 @@ class CVParser:
                         elif "@" not in first_line:
                             details["name"] = first_line.title()
 
+            # Try to extract name using LLM
+            if not details["name"]:
+                llm_name = CVParser.extract_name_with_llm(text)
+                if llm_name:
+                    details["name"] = llm_name
+                    print(f"CV_PARSER_DEBUG: LLM Extracted Name: {llm_name}")
+
             # spaCy PERSON fallback
             if not details["name"]:
                 try:
                     import spacy
                     nlp = spacy.load("en_core_web_sm")
-                    first_chunk = text[:1000]
+                    first_chunk = "\n".join(text.splitlines()[:3])[:200]
 
                     cleaned_chunk = (
                         _clean_spacing(first_chunk)
@@ -286,28 +301,28 @@ class CVParser:
                     for ent in chunk_doc.ents:
                         if ent.label_ == "PERSON":
                             clean_name = ent.text.strip().title()
-                            blocklist = [
-                                "Asp.Net", "Asp.Net Core", "React", "Node.Js", "Java", "Python", 
-                                "Html", "Css", "Sql", "Git",
-                                "Software Engineer", "Full Stack Developer", "Frontend Developer", 
-                                "Backend Developer", "DevOps Engineer", "Data Scientist", 
-                                "Project Manager", "Business Analyst", "Product Manager", 
-                                "QA Engineer", "UI/UX Designer", "Scrum Master", 
-                                "System Administrator", "Database Administrator"
-                            ]
-
-                            # Ensure it doesn't match email domain or contain @
                             is_valid_name = True
                             if "@" in clean_name:
                                 is_valid_name = False
                             elif details["email"] and clean_name.lower().replace(" ", "") in details["email"].lower():
                                 is_valid_name = False
+
+                            # Check against blocklist using substring matching for robust filtering
+                            invalid_name_words = {
+                                "software", "network", "system", "licensing", "management", 
+                                "administration", "technology", "information", "project", "data", 
+                                "business", "analyst", "engineer", "developer", "manager", 
+                                "server", "database", "admin", "lead", "director", "coordinator",
+                                "summary", "professional", "experience", "education", "skills",
+                                "certifications", "hardware", "infrastructure", "troubleshooting",
+                                "quality", "assurance", "testing", "operations", "vendor"
+                            }
                             
-                            # Check against blocklist
-                            for blocked in blocklist:
-                                if blocked.lower() in clean_name.lower():
-                                    is_valid_name = False
-                                    break
+                            if is_valid_name:
+                                for word in clean_name.lower().split():
+                                    if word in invalid_name_words:
+                                        is_valid_name = False
+                                        break
 
                             if (
                                 is_valid_name
@@ -326,7 +341,7 @@ class CVParser:
                 r"(?:Role|Title|Position):\s*(.+)", text, re.IGNORECASE
             )
             if role_match:
-                details["role"] = _clean_spacing(role_match.group(1))
+                details["title"] = _clean_spacing(role_match.group(1))
 
             roles_db = [
                 "Software Engineer", "Java Developer", "Python Developer", 
@@ -338,21 +353,28 @@ class CVParser:
             ]
 
             # Second-line check
-            if not details["role"] and lines and len(lines) > 1:
+            if not details["title"] and lines and len(lines) > 1:
                 second_line = _clean_spacing(lines[1])
                 # Check against full roles_db using the fixed regex
                 for role in roles_db:
                     pattern = re.compile(re.escape(role), re.IGNORECASE)
                     if pattern.search(second_line):
-                        details["role"] = role
+                        details["title"] = role
                         break
                 
                 # Fallback to original second line logic
-                if not details["role"] and ("|" in second_line or "Software" in second_line or "Developer" in second_line or "Engineer" in second_line):
-                    details["role"] = second_line
+                if not details["title"] and ("|" in second_line or "Software" in second_line or "Developer" in second_line or "Engineer" in second_line):
+                    details["title"] = second_line
+
+            # Try to extract the title using LLM (Generative AI)
+            if not details["title"]:
+                llm_title = CVParser.extract_title_with_llm(text)
+                if llm_title:
+                    details["title"] = llm_title
+                    print(f"CV_PARSER_DEBUG: LLM Extracted Title: {llm_title}")
 
             # roles_db scan
-            if not details["role"]:
+            if not details["title"]:
                 cleaned_text = _clean_spacing(text[:1000])
                 for role in roles_db:
                     pattern = re.compile(re.escape(role), re.IGNORECASE)
@@ -365,9 +387,9 @@ class CVParser:
                             re.IGNORECASE,
                         )
                         if prefix_match:
-                            details["role"] = f"{prefix_match.group(1)} {match.group(1)}".title()
+                            details["title"] = f"{prefix_match.group(1)} {role}".title()
                         else:
-                            details["role"] = match.group(1).title()
+                            details["title"] = role.title()
                         break
 
         except Exception as e:
@@ -466,4 +488,93 @@ class CVParser:
 
         except Exception as e:
             print(f"CV_PARSER_ERROR: Error predicting role: {e}")
+            return None
+
+    @staticmethod
+    def extract_name_with_llm(text: str) -> str | None:
+        """
+        Use Google Gemini to extract the candidate's full name from a CV.
+        """
+        import os
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("CV_PARSER_DEBUG: GEMINI_API_KEY not found. Skipping LLM name extraction.", flush=True)
+            return None
+            
+        try:
+            from google import genai
+            from google.genai import types
+            client = genai.Client(api_key=api_key)
+            
+            prompt = (
+                "You are an expert HR assistant. Extract the candidate's full name "
+                "from the following CV text. "
+                "Return ONLY the exact name as a string, without any titles, degrees (like PMP), "
+                "or extra words. If you cannot find a clear name, return the word 'NONE'.\n\n"
+                f"CV Text:\n{text[:4000]}"
+            )
+            print(f"CV_PARSER_DEBUG: Sending prompt to Gemini for name with length: {len(prompt)}", flush=True)
+            
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.0,
+                ),
+            )
+            
+            result = response.text.strip()
+            print(f"CV_PARSER_DEBUG: Gemini name returned: '{result}'", flush=True)
+            if result.upper() == 'NONE' or not result:
+                return None
+                
+            return result.title()
+        except Exception as e:
+            import traceback
+            print(f"CV_PARSER_ERROR: LLM Name Extraction failed: {e}", flush=True)
+            return None
+
+    @staticmethod
+    def extract_title_with_llm(text: str) -> str | None:
+        """
+        Use Google Gemini to extract the most recent job title from a CV.
+        """
+        import os
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("CV_PARSER_DEBUG: GEMINI_API_KEY not found. Skipping LLM title extraction.", flush=True)
+            return None
+            
+        try:
+            from google import genai
+            from google.genai import types
+            client = genai.Client(api_key=api_key)
+            
+            prompt = (
+                "You are an expert HR assistant. Extract the single most recent job title "
+                "of the applicant from the following CV text. "
+                "Return ONLY the exact job title as a string, nothing else. "
+                "If it's an anonymized CV with no job experience or no clear title, return the word 'NONE'.\n\n"
+                f"CV Text:\n{text[:4000]}"
+            )
+            print(f"CV_PARSER_DEBUG: Sending prompt to Gemini with length: {len(prompt)}", flush=True)
+            
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.0,
+                ),
+            )
+            
+            result = response.text.strip()
+            print(f"CV_PARSER_DEBUG: Gemini returned: '{result}'", flush=True)
+            if result.upper() == 'NONE' or not result:
+                return None
+                
+            return result.title()
+        except Exception as e:
+            import traceback
+            print(f"CV_PARSER_ERROR: LLM Title Extraction failed: {e}", flush=True)
+            traceback.print_exc()
             return None

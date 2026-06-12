@@ -37,9 +37,10 @@ class FeatureBuilder:
         if 'skills' not in df.columns:
             df['skills'] = [f['extracted_skills'] for f in features]
         else:
-            df['skills'] = df.apply(
-                lambda x: x['skills'] if isinstance(x.get('skills'), list) and len(x.get('skills', [])) > 0 
-                else features[x.name]['extracted_skills'], axis=1
-            )
+            extracted_skills_list = [f['extracted_skills'] for f in features]
+            df['skills'] = [
+                s if isinstance(s, list) and len(s) > 0 else e 
+                for s, e in zip(df['skills'], extracted_skills_list)
+            ]
         
         return df

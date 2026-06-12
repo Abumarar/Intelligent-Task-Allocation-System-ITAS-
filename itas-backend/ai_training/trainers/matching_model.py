@@ -41,9 +41,35 @@ class MatchingModelTrainer:
 
     def train_lightgbm_ranker(self):
         print("Training LightGBM Ranking Model (Phase 2)...")
+        dataset_path = "ai_training/dataset/task_assignment_training_dataset.csv"
+        
+        if not os.path.exists(dataset_path):
+            print(f"No task assignment data found at {dataset_path}. Run generate_data.py first.")
+            return None
+            
+        print(f"Loading data from {dataset_path}...")
+        df = pd.read_csv(dataset_path)
+        
+        # LGBMRanker requires the data to be sorted by the group identifier (task_id)
+        df = df.sort_values('task_id')
+        
+        features = [
+            'skill_overlap', 'critical_skill_match', 'missing_required_skills',
+            'years_experience', 'similar_tasks_completed', 'active_tasks',
+            'workload_percentage', 'availability_score', 'github_activity_score',
+            'average_rating', 'historical_success_rate'
+        ]
+        
+        X_train = df[features]
+        # LightGBM lambdarank expects relevance labels to be integers from 0 to 31.
+        # We will bin the 0-100 performance score into 5 relevance levels (0 to 4).
+        y_train = (df['performance_score'] // 20).clip(0, 4).astype(int)
+        
+        # Create group array (number of items per task_id)
+        group = df.groupby('task_id').size().values
+        
         with mlflow.start_run(run_name="LightGBM_Ranking"):
-            # We instantiate the ranker architecture to have the model artifact ready
-            # In a real environment with task-assignment pairs, we would fit it here
+            print(f"Fitting LightGBM Ranker on {len(df)} samples...")
             model = lgb.LGBMRanker(
                 objective="lambdarank",
                 metric="ndcg",
@@ -52,13 +78,16 @@ class MatchingModelTrainer:
                 random_state=self.config.RANDOM_STATE
             )
             
-            # Save dummy model for architecture completeness
+            model.fit(X_train, y_train, group=group)
+            
             model_path = os.path.join(self.config.MODELS_DIR, "lgbm_ranker.pkl")
             joblib.dump(model, model_path)
             
             mlflow.log_param("model_type", "LGBMRanker")
             mlflow.log_param("objective", "lambdarank")
-            print(f"LightGBM Ranker architecture saved to {model_path}")
+            mlflow.log_param("n_samples", len(df))
+            mlflow.log_param("n_features", len(features))
+            print(f"LightGBM Ranker fitted and saved to {model_path}")
             
         return model
 

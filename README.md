@@ -45,6 +45,7 @@ The system is built on a modern decoupled architecture:
 *   **Frontend (Client Layer):** A responsive, single-page application built with React, TypeScript, and Vite. State is managed via Context API, and data fetching is optimized using React Query. Styling is handled via Tailwind CSS, and advanced data visualization is powered by `recharts`.
 *   **Backend (API Layer):** A RESTful API built with Django and Django REST Framework (DRF). It handles business logic, JWT authentication, role-based access control (RBAC), atomic database transactions, and AI integrations.
 *   **AI/ML Engine:** An embedded scikit-learn pipeline used to classify tasks, predict roles based on CV content, and calculate suitability scores by dynamically fusing task requirements, parsed CV skillsets, and granular real-world historical performance evaluations.
+    *   **Model Training:** The AI models can be retrained locally using the provided pipeline. To train the models, navigate to `itas-backend`, activate your virtual environment, and run `python -m ai_training.train_model`. This will generate updated TF-IDF vectorizers, download pre-trained weights for SentenceTransformers, and train the LightGBM ranker.
 *   **Database:** PostgreSQL (with SQLite fallback for local dev) serving as the primary relational store. Redis is used for caching in production.
 
 ---
