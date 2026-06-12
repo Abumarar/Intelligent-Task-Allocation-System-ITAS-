@@ -74,3 +74,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 htmlcov/
+
+# AI/ML Generated Data
+*.csv
+mlflow.db
+*.db
