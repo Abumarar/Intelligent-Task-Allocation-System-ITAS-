@@ -164,8 +164,31 @@ class CVParser:
 
             doc = docx.Document(doc_file)
             full_text = []
+
+            # 1. Extract from Headers
+            for section in doc.sections:
+                for para in section.header.paragraphs:
+                    if para.text.strip():
+                        full_text.append(para.text)
+
+            # 2. Extract from Main Body
             for para in doc.paragraphs:
-                full_text.append(para.text)
+                if para.text.strip():
+                    full_text.append(para.text)
+
+            # 3. Extract from Tables
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for para in cell.paragraphs:
+                            if para.text.strip():
+                                full_text.append(para.text)
+
+            # 4. Extract from Footers
+            for section in doc.sections:
+                for para in section.footer.paragraphs:
+                    if para.text.strip():
+                        full_text.append(para.text)
 
             return "\n".join(full_text).strip()
 
