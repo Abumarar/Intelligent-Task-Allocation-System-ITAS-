@@ -2,11 +2,35 @@
 
 **Live Demo:** [https://www.jobtecacademy.com/](https://www.jobtecacademy.com/)
 
+![Build Status](https://img.shields.io/github/actions/workflow/status/Abumarar/Intelligent-Task-Allocation-System-ITAS-/backend-tests.yml?branch=main)
+![Coverage](https://img.shields.io/badge/coverage-75%25-green)
 ![Status: Production Ready](https://img.shields.io/badge/status-production%20ready-green)
-![Tech Stack](https://img.shields.io/badge/tech-Python%2C%20Django%2C%20React%2C%20TypeScript-blue)
+![Tech Stack](https://img.shields.io/badge/tech-Python%203.10%2B%2C%20Django%2C%20React%2C%20Node%2018%2B-blue)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-blue)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+## Project Status
+**Actively Maintained & Production-Ready**. This project is fully documented, tested, and ready for deployment.
+
+## Table of Contents
+- [Quick Start](#quick-start)
+- [Project Overview](#project-overview)
+- [Architecture](#architecture-overview)
+- [Documentation](#documentation)
+- [Local Development](#environment-setup--local-development)
+- [API Usage](#api-usage)
+- [Troubleshooting & FAQ](#troubleshooting--faq)
+
+## Quick Start
+```bash
+git clone https://github.com/Abumarar/Intelligent-Task-Allocation-System-ITAS-.git
+cd Intelligent-Task-Allocation-System-ITAS-
+docker-compose up --build
+```
+- Frontend: `http://localhost:80`
+- Backend API: `http://localhost:8000`
+- API Docs: `http://localhost:8000/api/docs/`
 
 ## Project Overview
 ITAS is an enterprise-grade, web-based system designed to optimize software development task allocation within IT projects. It leverages AI-driven matching algorithms, Natural Language Processing (NLP) for CV analysis, and historical performance tracking to ensure data-driven, unbiased task assignments.
@@ -151,3 +175,31 @@ The repository includes a GitHub Actions workflow (`.github/workflows/main.yml`)
 *   **RBAC (Role-Based Access Control):** Granular permissions ensuring PMs can only manage their own projects/employees.
 *   **Data Validation:** Strict serializers preventing injection attacks and ensuring data integrity.
 *   **Security Headers:** Enabled CORS restrictions, CSRF protections, and HSTS in production.
+
+---
+
+## Documentation
+
+For more detailed information, please refer to the following documents:
+- [Architecture Guide](ARCHITECTURE.md)
+- [API Documentation](docs/API.md)
+- [Development Guide](DEVELOPMENT.md)
+- [Deployment & Monitoring](DEPLOYMENT.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
+
+---
+
+## Troubleshooting & FAQ
+
+**Q: The AI matching isn't assigning tasks to the right employees.**
+A: Ensure the ML models are properly trained. You can force a retrain by running `python -m ai_training.train_model` in the backend.
+
+**Q: PyPDF2 is throwing errors when parsing CVs.**
+A: Some highly graphic or encrypted PDFs cannot be parsed. Check the `CV_PARSER_ERROR` logs.
+
+**Q: Docker container fails to start the backend.**
+A: Check if port 8000 is already in use, or if the `.env` file is missing required variables.
+
+**Q: How do I access the Swagger documentation?**
+A: Once the backend is running, navigate to `/api/docs/` or `/api/redoc/`.

@@ -1,0 +1,11 @@
+* @Abumarar
+
+# Backend
+/itas-backend/core/services/ml/ @Abumarar
+/itas-backend/core/models.py @Abumarar
+
+# Frontend
+/itas-frontend/src/ @Abumarar
+
+# CI/CD
+/.github/workflows/ @Abumarar

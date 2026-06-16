@@ -1,0 +1,41 @@
+name: Frontend Tests and Quality
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: 'itas-frontend/package-lock.json'
+        
+    - name: Install dependencies
+      run: |
+        cd itas-frontend
+        npm ci
+        
+    - name: Run ESLint
+      run: |
+        cd itas-frontend
+        npm run lint
+        
+    - name: Run Tests
+      run: |
+        cd itas-frontend
+        npm run coverage
+        
+    - name: Build Check
+      run: |
+        cd itas-frontend
+        npm run build

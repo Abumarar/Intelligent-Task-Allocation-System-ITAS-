@@ -1,0 +1,41 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly
+
+jobs:
+  security-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        
+    - name: Install Bandit
+      run: pip install bandit
+      
+    - name: Run Bandit (Python Security Scanner)
+      run: bandit -r itas-backend/core/ -ll -ii
+
+  security-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        
+    - name: Run NPM Audit
+      run: |
+        cd itas-frontend
+        npm audit --audit-level=high

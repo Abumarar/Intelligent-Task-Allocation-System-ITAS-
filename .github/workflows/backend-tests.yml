@@ -1,0 +1,47 @@
+name: Backend Tests and Quality
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r itas-backend/requirements.txt
+        pip install flake8 isort black
+        
+    - name: Run code formatting checks (black & isort)
+      run: |
+        black --check itas-backend/
+        isort --check-only itas-backend/
+        
+    - name: Run linting (flake8)
+      run: |
+        flake8 itas-backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 itas-backend/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Run tests with pytest
+      run: |
+        cd itas-backend
+        pytest --cov=core --cov-report=xml --cov-fail-under=70
+        
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./itas-backend/coverage.xml
