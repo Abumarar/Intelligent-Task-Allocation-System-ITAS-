@@ -1,7 +1,5 @@
 import os
 import joblib
-from functools import lru_cache
-
 class ModelRegistry:
     """Registry for lazy loading and caching ML models."""
     
@@ -59,7 +57,3 @@ class ModelRegistry:
             print(f"Error loading SentenceTransformer: {e}")
             return None
 
-    @classmethod
-    def clear_cache(cls):
-        """Clear model cache to free memory or reload."""
-        cls._models.clear()

@@ -7,6 +7,5 @@ class Config:
     
     TRAIN_DATA = os.path.join(DATA_DIR, "train.csv")
     VAL_DATA = os.path.join(DATA_DIR, "val.csv")
-    TEST_DATA = os.path.join(DATA_DIR, "test.csv")
     
     RANDOM_STATE = 42

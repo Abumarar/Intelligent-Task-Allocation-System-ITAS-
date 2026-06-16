@@ -1,5 +1,4 @@
 import pandas as pd
-from rapidfuzz import fuzz
 from langdetect import detect, DetectorFactory
 
 DetectorFactory.seed = 0

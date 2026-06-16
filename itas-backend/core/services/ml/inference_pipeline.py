@@ -45,10 +45,3 @@ class InferencePipeline:
             
         sim = cosine_similarity([vec1], [vec2])[0][0]
         return float(sim)
-        
-    def rank_candidates(self, task_text: str, candidate_texts: List[str]) -> List[float]:
-        """Rank candidates against a task using ML model (TF-IDF fallback currently)."""
-        scores = []
-        for cand in candidate_texts:
-            scores.append(self.calculate_similarity(task_text, cand))
-        return scores

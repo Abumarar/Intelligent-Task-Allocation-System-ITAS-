@@ -32,13 +32,3 @@ class DatasetNormalizer:
                 normalized["skills"] = [s.strip() for s in normalized["skills"].split(",") if s.strip()]
                 
         return normalized
-
-    def normalize_task(self, record):
-        normalized = {
-            "task_id": record.get("task_id", ""),
-            "title": record.get("title", ""),
-            "description": record.get("description", ""),
-            "required_skills": record.get("required_skills", []),
-            "priority": record.get("priority", "MEDIUM")
-        }
-        return normalized
