@@ -24,7 +24,7 @@ class Command(BaseCommand):
         dataset_hash = ""
         if os.path.exists(train_csv_path):
             with open(train_csv_path, "rb") as f:
-                dataset_hash = hashlib.md5(f.read()).hexdigest()
+                dataset_hash = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
 
         # 2. Train models
         self.stdout.write("Running Model Training...")
