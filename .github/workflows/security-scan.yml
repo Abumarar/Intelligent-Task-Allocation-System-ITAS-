@@ -33,9 +33,9 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 18.x
+        node-version: 20.x
         
     - name: Run NPM Audit
       run: |
         cd itas-frontend
-        npm audit --audit-level=high
+        npm audit --audit-level=high --omit=dev

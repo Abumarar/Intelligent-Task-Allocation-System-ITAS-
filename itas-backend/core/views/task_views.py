@@ -64,7 +64,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         if request.user.role != "PM":
             return Response(
                 {"message": "Only PMs can create tasks"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         serializer = self.get_serializer(data=request.data)
