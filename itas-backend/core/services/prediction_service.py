@@ -1,5 +1,6 @@
 from core.services.ml.inference_pipeline import InferencePipeline
 
+
 class PredictionService:
     """
     Abstraction layer for loading the AI model and making predictions.
@@ -12,7 +13,10 @@ class PredictionService:
     def get_model(cls):
         """Backward compatibility: Get model directly from registry if needed."""
         from core.services.ml.model_registry import ModelRegistry
-        return ModelRegistry.get_model("domain_predictor", fallback_path="ai_training/resume_classifier_model.pkl")
+
+        return ModelRegistry.get_model(
+            "domain_predictor", fallback_path="ai_training/resume_classifier_model.pkl"
+        )
 
     @classmethod
     def predict_category(cls, text: str) -> str:

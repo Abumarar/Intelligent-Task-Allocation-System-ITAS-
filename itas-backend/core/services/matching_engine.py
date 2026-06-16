@@ -6,11 +6,10 @@ Calculates how well an employee matches task requirements based on skills, workl
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from django.db.models import Case, Count, F, Q, Value, When
-from django.db.models.functions import Lower
-
 from core.models import Employee, Task
 from core.services.skill_extractor import SkillExtractor
+from django.db.models import Case, Count, F, Q, Value, When
+from django.db.models.functions import Lower
 
 
 class MatchingEngine:
@@ -41,8 +40,9 @@ class MatchingEngine:
             },
         }
         self.skill_extractor = SkillExtractor()
-        
+
         from core.services.ml.inference_pipeline import InferencePipeline
+
         self.ml_pipeline = InferencePipeline()
 
     def calculate_suitability_score(
@@ -87,7 +87,7 @@ class MatchingEngine:
             breakdown = {
                 "skill_match": 100.0,
                 "historical_performance": round(performance_score * 100, 1),
-                "workload_availability": round(workload_score * 100, 1)
+                "workload_availability": round(workload_score * 100, 1),
             }
 
             if total_weight > 0:
@@ -115,11 +115,11 @@ class MatchingEngine:
             + workload_score * weights["workload"]
             + performance_score * weights.get("performance", 0.0)
         )
-        
+
         breakdown = {
             "skill_match": round(skill_score * 100, 1),
             "historical_performance": round(performance_score * 100, 1),
-            "workload_availability": round(workload_score * 100, 1)
+            "workload_availability": round(workload_score * 100, 1),
         }
 
         return max(0.0, min(1.0, total_score)), breakdown
@@ -145,21 +145,24 @@ class MatchingEngine:
             skill_profile[key] = max(skill_profile.get(key, 0.0), confidence)
 
         # Enhance with historical real performance from tasks
-        from core.models import TaskAssignment
         import math
+
+        from core.models import TaskAssignment
         from django.utils import timezone
-        
+
         completed_assignments = TaskAssignment.objects.filter(
             employee=employee, status="COMPLETED"
-        ).prefetch_related('skill_evaluations')
-        
+        ).prefetch_related("skill_evaluations")
+
         now = timezone.now()
-        
+
         for assignment in completed_assignments:
-            days_ago = (now - assignment.completed_at).days if assignment.completed_at else 365
+            days_ago = (
+                (now - assignment.completed_at).days if assignment.completed_at else 365
+            )
             # Decay factor: more recent tasks have higher weight (0.5 to 1.0)
             time_weight = max(0.5, math.exp(-days_ago / 365.0))
-            
+
             for eval in assignment.skill_evaluations.all():
                 key = self.skill_extractor.normalize_skill_key(eval.skill_name)
                 if not key:
@@ -167,7 +170,9 @@ class MatchingEngine:
                 # 1-5 scale -> 0.2 to 1.0 confidence
                 achieved_confidence = (eval.achieved_level / 5.0) * time_weight
                 # Real performance overrides static CV skills
-                skill_profile[key] = max(skill_profile.get(key, 0.0), achieved_confidence)
+                skill_profile[key] = max(
+                    skill_profile.get(key, 0.0), achieved_confidence
+                )
 
         return skill_profile
 
@@ -225,12 +230,13 @@ class MatchingEngine:
     def _calculate_performance_score(self, employee: Employee) -> float:
         """Calculate performance score based on past tasks rating and consistency (0-1)."""
         from core.models import TaskAssignment
+
         completed_assignments = TaskAssignment.objects.filter(
             employee=employee, status="COMPLETED"
         )
         if not completed_assignments.exists():
             return 0.5  # Neutral score for new employees without history
-            
+
         total_rating = 0
         count = 0
         ratings = []
@@ -239,23 +245,23 @@ class MatchingEngine:
                 total_rating += a.performance_rating
                 count += 1
                 ratings.append(a.performance_rating)
-                
+
         if count == 0:
             return 0.5
-            
+
         avg_rating = total_rating / count
-        
+
         # Consistency logic
         variance = 0
         if count > 1:
             variance = sum((r - avg_rating) ** 2 for r in ratings) / count
-            
+
         # Penalize high variance
         consistency_penalty = min(0.2, variance * 0.05)
-        
+
         base_score = avg_rating / 5.0
         final_score = base_score - consistency_penalty
-        
+
         return max(0.0, min(1.0, final_score))
 
     def _match_skill(
@@ -422,30 +428,42 @@ class MatchingEngine:
             score, breakdown = self._calculate_total_score(
                 employee, normalized_required, skill_profile, weights
             )
-            
+
             ml_score = 0.0
             try:
-                if hasattr(employee, 'cv') and employee.cv and employee.cv.extracted_text and task.description:
-                    ml_score = self.ml_pipeline.calculate_similarity(task.description, employee.cv.extracted_text)
+                if (
+                    hasattr(employee, "cv")
+                    and employee.cv
+                    and employee.cv.extracted_text
+                    and task.description
+                ):
+                    ml_score = self.ml_pipeline.calculate_similarity(
+                        task.description, employee.cv.extracted_text
+                    )
             except Exception as e:
                 print(f"ML similarity error for employee {employee.id}: {e}")
-                
+
             breakdown["role_prediction"] = round(ml_score * 100, 1)
-                
+
             if ml_score > 0.0:
                 from django.conf import settings
-                is_shadow = getattr(settings, 'SHADOW_ML_DEPLOYMENT', True)
+
+                is_shadow = getattr(settings, "SHADOW_ML_DEPLOYMENT", True)
                 if is_shadow:
                     final_score = score
                 else:
                     final_score = (score * 0.7) + (ml_score * 0.3)
             else:
                 final_score = score
-                
+
             final_score = round(final_score * 100, 2)
-            
+
             # Use ml_score as confidence, or a fallback heuristic
-            confidence_score = round(ml_score * 100, 2) if ml_score > 0 else round(min(1.0, score + 0.1) * 100, 2)
+            confidence_score = (
+                round(ml_score * 100, 2)
+                if ml_score > 0
+                else round(min(1.0, score + 0.1) * 100, 2)
+            )
 
             if final_score >= min_score:
                 matches.append(

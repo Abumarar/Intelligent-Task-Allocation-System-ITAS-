@@ -2,10 +2,17 @@
 Serializers for API responses
 """
 
+from core.models import (
+    CV,
+    Employee,
+    Project,
+    Skill,
+    Task,
+    TaskAssignment,
+    TaskSkillEvaluation,
+)
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
-from core.models import CV, Employee, Project, Skill, Task, TaskAssignment, TaskSkillEvaluation
 
 User = get_user_model()
 
@@ -219,7 +226,9 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_assigned_to(self, obj):
         """Get ID of currently assigned employee."""
         assignment = (
-            obj.assignments.filter(status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED", "COMPLETED"])
+            obj.assignments.filter(
+                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED", "COMPLETED"]
+            )
             .order_by("-assigned_at")
             .first()
         )
@@ -228,7 +237,9 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_assigned_to_name(self, obj):
         """Get name of currently assigned employee."""
         assignment = (
-            obj.assignments.filter(status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED", "COMPLETED"])
+            obj.assignments.filter(
+                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED", "COMPLETED"]
+            )
             .order_by("-assigned_at")
             .first()
         )
@@ -237,18 +248,24 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_employee_notes(self, obj):
         """Get latest notes from the assigned employee."""
         assignment = (
-            obj.assignments.filter(status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED", "COMPLETED"])
+            obj.assignments.filter(
+                status__in=["ASSIGNED", "IN_PROGRESS", "BLOCKED", "COMPLETED"]
+            )
             .order_by("-assigned_at")
             .first()
         )
-        return assignment.notes if assignment and hasattr(assignment, 'notes') else None
+        return assignment.notes if assignment and hasattr(assignment, "notes") else None
 
     def get_performance_rating(self, obj):
-        assignment = obj.assignments.filter(status="COMPLETED").order_by("-assigned_at").first()
+        assignment = (
+            obj.assignments.filter(status="COMPLETED").order_by("-assigned_at").first()
+        )
         return assignment.performance_rating if assignment else None
 
     def get_performance_comments(self, obj):
-        assignment = obj.assignments.filter(status="COMPLETED").order_by("-assigned_at").first()
+        assignment = (
+            obj.assignments.filter(status="COMPLETED").order_by("-assigned_at").first()
+        )
         return assignment.performance_comments if assignment else None
 
     def create(self, validated_data):
@@ -295,8 +312,13 @@ class TaskSkillEvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskSkillEvaluation
         fields = [
-            "id", "assignment", "skill_name", "required_level", 
-            "achieved_level", "pm_comment", "evidence"
+            "id",
+            "assignment",
+            "skill_name",
+            "required_level",
+            "achieved_level",
+            "pm_comment",
+            "evidence",
         ]
         read_only_fields = ["id"]
 

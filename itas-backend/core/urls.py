@@ -2,15 +2,21 @@
 URL routing for core app
 """
 
+from core.views import (
+    AuthView,
+    DashboardView,
+    EmployeeViewSet,
+    ProjectViewSet,
+    ReportsView,
+    TaskViewSet,
+    debug_email,
+    debug_media,
+)
 from django.urls import include, path
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
-
-from core.views import (AuthView, DashboardView, EmployeeViewSet,
-                        ProjectViewSet, ReportsView, TaskViewSet, debug_email,
-                        debug_media)
 
 router = DefaultRouter()
 router.register(r"employees", EmployeeViewSet, basename="employee")

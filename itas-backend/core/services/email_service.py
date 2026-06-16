@@ -1,7 +1,6 @@
+from core.models import Employee, Task, User
 from django.conf import settings
 from django.core.mail import send_mail
-
-from core.models import Employee, Task, User
 
 
 class EmailService:

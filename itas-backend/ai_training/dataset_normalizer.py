@@ -1,5 +1,6 @@
 import json
 
+
 class DatasetNormalizer:
     def __init__(self):
         pass
@@ -24,11 +25,13 @@ class DatasetNormalizer:
             "experience_years": record.get("experience_years", 0),
             "domain": record.get("domain", record.get("category", "")),
         }
-        
+
         if isinstance(normalized["skills"], str):
             try:
                 normalized["skills"] = json.loads(normalized["skills"])
             except:
-                normalized["skills"] = [s.strip() for s in normalized["skills"].split(",") if s.strip()]
-                
+                normalized["skills"] = [
+                    s.strip() for s in normalized["skills"].split(",") if s.strip()
+                ]
+
         return normalized

@@ -1,7 +1,6 @@
+from core.models import Employee
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-
-from core.models import Employee
 
 User = get_user_model()
 

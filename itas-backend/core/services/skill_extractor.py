@@ -3,9 +3,9 @@ Skill Extraction Service using curated patterns and section heuristics.
 Extracts technical skills from CV text using fast NLP-lite techniques.
 """
 
+import logging
 import re
 from typing import Any, Dict, List, Optional, Pattern, Set
-import logging
 
 try:
     import spacy
@@ -286,13 +286,20 @@ class SkillExtractor:
         if spacy and SkillExtractor._nlp is None:
             try:
                 SkillExtractor._nlp = spacy.load("en_core_web_sm")
-                SkillExtractor._matcher = PhraseMatcher(SkillExtractor._nlp.vocab, attr="LOWER")
-                
+                SkillExtractor._matcher = PhraseMatcher(
+                    SkillExtractor._nlp.vocab, attr="LOWER"
+                )
+
                 # Add all known skills to the matcher
-                patterns = [SkillExtractor._nlp.make_doc(text) for text in SkillExtractor._known_skill_keys]
+                patterns = [
+                    SkillExtractor._nlp.make_doc(text)
+                    for text in SkillExtractor._known_skill_keys
+                ]
                 SkillExtractor._matcher.add("SKILL", patterns)
             except Exception as e:
-                logger.error(f"Failed to initialize spaCy: {e}. Ensure en_core_web_sm is downloaded.")
+                logger.error(
+                    f"Failed to initialize spaCy: {e}. Ensure en_core_web_sm is downloaded."
+                )
                 SkillExtractor._nlp = None
 
     def extract_skills(
@@ -318,21 +325,21 @@ class SkillExtractor:
             # Truncate text if extremely long to avoid memory issues with NLP
             doc = SkillExtractor._nlp(text[:50000])
             matches = SkillExtractor._matcher(doc)
-            
+
             for match_id, start, end in matches:
                 span = doc[start:end]
                 skill_key = self.normalize_skill_key(span.text)
                 if not skill_key:
                     continue
-                    
+
                 if skill_key not in found_skills:
                     found_skills[skill_key] = {
                         "name": self.normalize_skill_name(skill_key),
-                        "confidence_score": 0.85, # High confidence for exact spacy matches
+                        "confidence_score": 0.85,  # High confidence for exact spacy matches
                         "count": 0,
                     }
                 found_skills[skill_key]["count"] += 1
-                
+
         # Method 2: Context-based extraction (look for skill sections) as fallback/supplement
         skill_sections = self._extract_skill_sections(text)
         for skill in skill_sections:

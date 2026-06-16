@@ -2,10 +2,9 @@
 Management command to create demo users for testing
 """
 
+from core.models import Employee, Skill
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-
-from core.models import Employee, Skill
 
 User = get_user_model()
 

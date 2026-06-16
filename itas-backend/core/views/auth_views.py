@@ -1,19 +1,35 @@
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import viewsets, status, exceptions
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from core.authentication import generate_jwt_token
+from core.models import (
+    CV,
+    AuditLog,
+    Employee,
+    Project,
+    Skill,
+    Task,
+    TaskAssignment,
+    User,
+)
+from core.serializers import (
+    EmployeeSerializer,
+    ProjectSerializer,
+    TaskAssignmentSerializer,
+    TaskMatchSerializer,
+    TaskSerializer,
+    UserSerializer,
+)
+from core.services.audit_service import AuditService
+from core.services.cv_parser import CVParser
+from core.services.matching_engine import MatchingEngine
+from core.services.skill_extractor import SkillExtractor
 from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from core.models import User, Employee, Project, Task, TaskAssignment, Skill, AuditLog, CV
-from core.serializers import UserSerializer, EmployeeSerializer, ProjectSerializer, TaskSerializer, TaskAssignmentSerializer, TaskMatchSerializer
-from core.services.audit_service import AuditService
-from core.services.matching_engine import MatchingEngine
-from core.services.cv_parser import CVParser
-from core.services.skill_extractor import SkillExtractor
-from core.authentication import generate_jwt_token
+from rest_framework import exceptions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class AuthView(APIView):
@@ -122,4 +138,3 @@ class AuthView(APIView):
         user_data["id"] = str(user_data["id"])
 
         return Response({"user": user_data, "message": "Profile updated successfully"})
-

@@ -2,11 +2,10 @@
 Django admin configuration
 """
 
+from core.models import CV, Employee, Skill, Task, TaskAssignment, TaskSkill
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
-from core.models import CV, Employee, Skill, Task, TaskAssignment, TaskSkill
 
 User = get_user_model()
 

@@ -194,11 +194,21 @@ class Task(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True
     )
-    task_type = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., bugfix, feature, research, documentation")
+    task_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="e.g., bugfix, feature, research, documentation",
+    )
     complexity_level = models.CharField(
-        max_length=20, 
-        choices=[("LOW", "Low"), ("MEDIUM", "Medium"), ("HIGH", "High"), ("CRITICAL", "Critical")], 
-        default="MEDIUM"
+        max_length=20,
+        choices=[
+            ("LOW", "Low"),
+            ("MEDIUM", "Medium"),
+            ("HIGH", "High"),
+            ("CRITICAL", "Critical"),
+        ],
+        default="MEDIUM",
     )
 
     class Meta:
@@ -276,7 +286,10 @@ class TaskAssignment(models.Model):
 
 class TaskSkillEvaluation(models.Model):
     """Skill-based performance evaluation for a task."""
-    assignment = models.ForeignKey(TaskAssignment, on_delete=models.CASCADE, related_name='skill_evaluations')
+
+    assignment = models.ForeignKey(
+        TaskAssignment, on_delete=models.CASCADE, related_name="skill_evaluations"
+    )
     skill_name = models.CharField(max_length=100)
     required_level = models.IntegerField(default=3, help_text="1-5 scale")
     achieved_level = models.IntegerField(default=3, help_text="1-5 scale")
@@ -284,7 +297,7 @@ class TaskSkillEvaluation(models.Model):
     evidence = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ['assignment', 'skill_name']
+        unique_together = ["assignment", "skill_name"]
 
     def __str__(self):
         return f"{self.skill_name} evaluation for {self.assignment}"

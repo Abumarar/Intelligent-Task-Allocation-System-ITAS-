@@ -1,21 +1,25 @@
-from typing import Dict, Any, List
-from core.services.ml.model_registry import ModelRegistry
+from typing import Any, Dict, List
+
 from core.services.ml.feature_transformer import FeatureTransformer
+from core.services.ml.model_registry import ModelRegistry
+
 
 class InferencePipeline:
     """High-level pipeline for running model inference."""
-    
+
     def __init__(self):
         self.feature_transformer = FeatureTransformer()
 
     def predict_domain(self, text: str) -> Dict[str, Any]:
         """Predict domain/category for a given text."""
-        model = ModelRegistry.get_model("domain_predictor", fallback_path="ai_training/resume_classifier_model.pkl")
+        model = ModelRegistry.get_model(
+            "domain_predictor", fallback_path="ai_training/resume_classifier_model.pkl"
+        )
         if not model:
             return {"prediction": "", "confidence": 0.0, "probabilities": {}}
-            
+
         cleaned = self.feature_transformer.extract_features(text)["clean_text"]
-        
+
         try:
             prediction = model.predict([cleaned])[0]
             if hasattr(model, "predict_proba"):
@@ -26,9 +30,13 @@ class InferencePipeline:
                 return {
                     "prediction": str(prediction),
                     "confidence": confidence,
-                    "probabilities": {str(k): float(v) for k, v in prob_dict.items()}
+                    "probabilities": {str(k): float(v) for k, v in prob_dict.items()},
                 }
-            return {"prediction": str(prediction), "confidence": 1.0, "probabilities": {}}
+            return {
+                "prediction": str(prediction),
+                "confidence": 1.0,
+                "probabilities": {},
+            }
         except Exception as e:
             print(f"Error in predict_domain: {e}")
             return {"prediction": "", "confidence": 0.0, "probabilities": {}}
@@ -36,12 +44,12 @@ class InferencePipeline:
     def calculate_similarity(self, text1: str, text2: str) -> float:
         """Calculate cosine similarity between two texts using SentenceTransformer."""
         from sklearn.metrics.pairwise import cosine_similarity
-        
+
         vec1 = self.feature_transformer.transform_text_to_embedding(text1)
         vec2 = self.feature_transformer.transform_text_to_embedding(text2)
-        
+
         if vec1 is None or vec2 is None:
             return 0.0
-            
+
         sim = cosine_similarity([vec1], [vec2])[0][0]
         return float(sim)

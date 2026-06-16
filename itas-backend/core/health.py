@@ -1,10 +1,12 @@
-from django.http import JsonResponse
-from django.db import connection
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 import time
 
-@api_view(['GET'])
+from django.db import connection
+from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
+
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def health_check(request):
     """
@@ -12,10 +14,7 @@ def health_check(request):
     Verifies DB connectivity and basic application state.
     """
     status = "ok"
-    components = {
-        "database": "ok",
-        "api": "ok"
-    }
+    components = {"database": "ok", "api": "ok"}
 
     # Check Database Connectivity
     try:
@@ -24,8 +23,7 @@ def health_check(request):
         status = "degraded"
         components["database"] = "down"
 
-    return JsonResponse({
-        "status": status,
-        "components": components,
-        "timestamp": time.time()
-    }, status=200 if status == "ok" else 503)
+    return JsonResponse(
+        {"status": status, "components": components, "timestamp": time.time()},
+        status=200 if status == "ok" else 503,
+    )

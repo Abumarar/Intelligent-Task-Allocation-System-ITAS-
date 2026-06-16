@@ -38,10 +38,8 @@ INSTALLED_APPS = [
     # Local apps
     "core.apps.CoreConfig",
     "apps.ai.apps.AIConfig",
-    
     # Monitoring
     "django_prometheus",
-    
     # API Documentation
     "drf_spectacular",
 ]
@@ -192,13 +190,13 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@itas.com")
 # Celery
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
 
 # Sentry Monitoring Setup
 import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
 
 SENTRY_DSN = os.getenv("SENTRY_DSN", "")
 if SENTRY_DSN:
@@ -206,7 +204,7 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration(), CeleryIntegration()],
         traces_sample_rate=1.0,
-        send_default_pii=True
+        send_default_pii=True,
     )
 
 # Structured Logging
@@ -220,7 +218,7 @@ LOGGING = {
         },
         "standard": {
             "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            "datefmt": "%d/%b/%Y %H:%M:%S"
+            "datefmt": "%d/%b/%Y %H:%M:%S",
         },
     },
     "handlers": {

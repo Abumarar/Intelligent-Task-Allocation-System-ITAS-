@@ -1,14 +1,16 @@
 import os
 
-filepath = r'core\services\cv_parser.py'
-with open(filepath, 'r', encoding='utf-8') as f:
+filepath = r"core\services\cv_parser.py"
+with open(filepath, "r", encoding="utf-8") as f:
     content = f.read()
 
 # 1. Spacy 1000 to 3 lines
-content = content.replace('first_chunk = text[:1000]', 'first_chunk = "\\n".join(text.splitlines()[:3])[:200]')
+content = content.replace(
+    "first_chunk = text[:1000]", 'first_chunk = "\\n".join(text.splitlines()[:3])[:200]'
+)
 
 # 2. Name extraction blocklist replace
-old_blocklist = '''                            blocklist = [
+old_blocklist = """                            blocklist = [
                                 "Asp.Net", "Asp.Net Core", "React", "Node.Js", "Java", "Python", 
                                 "Html", "Css", "Sql", "Git",
                                 "Software Engineer", "Full Stack Developer", "Frontend Developer", 
@@ -29,9 +31,9 @@ old_blocklist = '''                            blocklist = [
                             for blocked in blocklist:
                                 if blocked.lower() in clean_name.lower():
                                     is_valid_name = False
-                                    break'''
+                                    break"""
 
-new_blocklist = '''                            is_valid_name = True
+new_blocklist = """                            is_valid_name = True
                             if "@" in clean_name:
                                 is_valid_name = False
                             elif details["email"] and clean_name.lower().replace(" ", "") in details["email"].lower():
@@ -52,12 +54,12 @@ new_blocklist = '''                            is_valid_name = True
                                 for word in clean_name.lower().split():
                                     if word in invalid_name_words:
                                         is_valid_name = False
-                                        break'''
+                                        break"""
 
 content = content.replace(old_blocklist, new_blocklist)
 
 # 3. LLM Title extraction and match.group bug fix
-old_roles = '''            # roles_db scan
+old_roles = """            # roles_db scan
             if not details["role"]:
                 cleaned_text = _clean_spacing(text[:1000])
                 for role in roles_db:
@@ -74,9 +76,9 @@ old_roles = '''            # roles_db scan
                             details["role"] = f"{prefix_match.group(1)} {match.group(1)}".title()
                         else:
                             details["role"] = match.group(1).title()
-                        break'''
+                        break"""
 
-new_roles = '''            # Try to extract the title using LLM (Generative AI)
+new_roles = """            # Try to extract the title using LLM (Generative AI)
             if not details["role"]:
                 llm_title = CVParser.extract_title_with_llm(text)
                 if llm_title:
@@ -100,7 +102,7 @@ new_roles = '''            # Try to extract the title using LLM (Generative AI)
                             details["role"] = f"{prefix_match.group(1)} {role}".title()
                         else:
                             details["role"] = role.title()
-                        break'''
+                        break"""
 
 content = content.replace(old_roles, new_roles)
 
@@ -148,10 +150,10 @@ llm_method = '''
             return None
 '''
 
-if 'def extract_title_with_llm' not in content:
+if "def extract_title_with_llm" not in content:
     content += llm_method
 
-with open(filepath, 'w', encoding='utf-8') as f:
+with open(filepath, "w", encoding="utf-8") as f:
     f.write(content)
 
-print('Patch applied successfully.')
+print("Patch applied successfully.")
